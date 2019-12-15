@@ -1,6 +1,7 @@
 """Core survey toolkit"""
 # pylint: disable=missing-docstring
 
+import json
 import re
 from collections import OrderedDict
 import pandas as pd
@@ -13,6 +14,19 @@ class Survey:
     def __init__(self, questions):
         self.questions = questions
 
+    @classmethod
+    def from_surveyjs(cls, survey_json: dict, results: list = None,
+                      default_other_text='other, which?', default_none_text='none'):
+        """Builds Survey object from surveyjs' survey json and, optionally, a result set"""
+        from .io.surveyjs import MetadataParser, process_result
+        metadata_parser = MetadataParser(default_other_text=default_other_text,
+                                         default_none_text=default_none_text)
+        survey = cls(questions=metadata_parser.parse(survey_json))
+        if results:
+            results = [process_result(json.loads(row)) for row in results]
+            survey.add_results(*results)
+        return survey
+
     def add_result(self, **kwargs):
         for question in self.questions:
             question.add_answer(kwargs.get(question.name, None))
@@ -21,15 +35,17 @@ class Survey:
         for result in args:
             self.add_result(**result)
 
-    def get_results(self, labels=False) -> list:
-        results = []
+    def get_results(self, labels=False) -> OrderedDict:
+        results = OrderedDict()
         for question in self.questions:
             key = question.label if labels else question.name
-            results.append((key, question.get_answers(labels=labels)))
+            assert key not in results, f"Duplicate key: {key}"
+            results[key] = question.get_answers(labels=labels)
         return OrderedDict(results)
 
-    def summary(self, labels=True, **kwargs):
-        return [question.summary(labels=labels, **kwargs) for question in self.questions]
+    def summary(self, labels=True, language='en', **kwargs):
+        return [question.summary(labels=labels, language=language, **kwargs)
+                for question in self.questions]
 
     def clean_labels(self, regex):
         for question in self.questions:
