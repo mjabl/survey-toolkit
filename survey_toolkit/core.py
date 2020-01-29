@@ -56,10 +56,10 @@ class Survey:
             question.clean_html_labels()
 
     def filter(self):
-        pass
+        raise NotImplementedError
 
     def remove_duplicates(self, keep='ceil'):
-        pass
+        raise NotImplementedError
 
     def to_pandas(self, labels=False) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data """
@@ -208,4 +208,4 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         return summary_series
 
     def get_dummies(self):
-        pass
+        raise NotImplementedError
