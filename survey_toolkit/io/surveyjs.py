@@ -1,3 +1,4 @@
+#pylint: disable=cyclic-import
 """Parser for surveyjs' metadata json and result set"""
 
 from ..core import (Question, SingleChoiceQuestion, MultipleChoiceQuestion,
