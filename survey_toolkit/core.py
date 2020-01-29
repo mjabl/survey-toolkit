@@ -94,6 +94,11 @@ class Question:
     def get_answers(self, **kwargs):  # pylint:disable=unused-argument
         return self.answers
 
+    def get_unique_answers(self, **kwargs):
+        unique_answers = set(self.get_answers(**kwargs))
+        unique_answers.discard(None)
+        return sorted(unique_answers)
+
     def summary(self, labels=True, **kwargs):  # pylint:disable=unused-argument
         name = self.label if labels else self.name
         return f"Name: {name}, summary unavailable"
@@ -165,12 +170,15 @@ class ChoiceQuestion(Question):
 class SingleChoiceQuestion(ChoiceQuestion):
 
     def get_answers(self, **kwargs):
-        if kwargs['labels']:
+        if kwargs.get('labels'):
             return [self.choices.get(answer, answer) for answer in self.answers]
-        return super(SingleChoiceQuestion, self).get_answers(**kwargs)
+        return super(SingleChoiceQuestion, self).get_answers()
 
     def to_series(self, labels=False):
-        categories = self.choices.values() if labels else self.choices.keys()
+        if self.choices:
+            categories = self.choices.values() if labels else self.choices.keys()
+        else:
+            categories = self.get_unique_answers()
         series = pd.Categorical(self.get_answers(labels=labels), categories=list(categories),
                                 ordered=True)
         series.name = self.label if labels else self.name
@@ -187,12 +195,12 @@ class MultipleChoiceQuestion(ChoiceQuestion):
     data_type = list
 
     def get_answers(self, **kwargs):
-        if kwargs['labels']:
+        if kwargs.get('labels'):
             answers = []
             for answer_list in self.answers:
                 answers.append([self.choices.get(item, item) for item in answer_list])
             return answers
-        return super(MultipleChoiceQuestion, self).get_answers(**kwargs)
+        return super(MultipleChoiceQuestion, self).get_answers()
 
     def add_answer(self, value):
         if not value:
