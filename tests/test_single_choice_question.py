@@ -1,4 +1,4 @@
-#pylint:skip-file
+# pylint:disable=missing-docstring,redefined-outer-name
 import pytest
 from survey_toolkit.core import SingleChoiceQuestion
 
