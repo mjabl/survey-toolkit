@@ -47,9 +47,8 @@ def test_add_answer_with_conversion_to_label(question):
 
 
 def test_to_series(question):
-    series = question.to_series()
     expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
-    assert all(series == expected)
+    assert all(question.to_series() == expected)
 
 
 def test_to_dummies(question):
