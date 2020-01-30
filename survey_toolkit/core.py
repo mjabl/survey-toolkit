@@ -81,7 +81,7 @@ class Question:
 
     @property
     def label(self):
-        if hasattr(self, '_label'):
+        if self._label:
             return self._label
         return self.name
 
