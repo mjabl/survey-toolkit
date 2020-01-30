@@ -31,6 +31,7 @@ class Survey:
         for question in self.questions:
             question.add_answer(kwargs.get(question.name, None))
 
+    # TODO: implement conversion to labels to be used by from_surveyjs
     def add_results(self, *args):
         for result in args:
             self.add_result(**result)
