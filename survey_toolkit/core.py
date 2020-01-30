@@ -40,11 +40,11 @@ class Survey:
         for question in self.questions:
             key = question.label if labels else question.name
             assert key not in results, f"Duplicate key: {key}"
-            results[key] = question.get_answers(labels=labels)
+            results[key] = question.answers
         return OrderedDict(results)
 
-    def summary(self, labels=True, language='en', **kwargs):
-        return [question.summary(labels=labels, language=language, **kwargs)
+    def summary(self, language='en', **kwargs):
+        return [question.summary(language=language, **kwargs)
                 for question in self.questions]
 
     def clean_labels(self, regex):
@@ -61,9 +61,9 @@ class Survey:
     def remove_duplicates(self, keep='ceil'):
         raise NotImplementedError
 
-    def to_pandas(self, labels=False) -> pd.DataFrame:
+    def to_pandas(self) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data """
-        return pd.DataFrame.from_dict(self.get_results(labels))
+        return pd.DataFrame.from_dict(self.get_results())
 
 
 class Question:
@@ -84,23 +84,20 @@ class Question:
             return self._label
         return self.name
 
-    def add_answer(self, value):
+    def add_answer(self, value, **kwargs): #pylint:disable=unused-argument
         if not self.answers:
             self.answers = []
         if value:
             value = self.data_type(value)
         self.answers.append(value)
 
-    def get_answers(self, **kwargs):  # pylint:disable=unused-argument
-        return self.answers
-
-    def get_unique_answers(self, **kwargs):
-        unique_answers = set(self.get_answers(**kwargs))
+    def get_unique_answers(self):
+        unique_answers = set(self.answers)
         unique_answers.discard(None)
         return sorted(unique_answers)
 
-    def summary(self, labels=True, **kwargs):  # pylint:disable=unused-argument
-        name = self.label if labels else self.name
+    def summary(self, **kwargs):  # pylint:disable=unused-argument
+        name = self.label
         return f"Name: {name}, summary unavailable"
 
     def clean_labels(self, regex):
@@ -110,9 +107,9 @@ class Question:
     def clean_html_labels(self):
         self.clean_labels(regex='<.*?>')
 
-    def to_series(self, labels=False):
-        series = pd.Series(self.get_answers(labels=labels))
-        series.name = self.label if labels else self.name
+    def to_series(self):
+        series = pd.Series(self.answers)
+        series.name = self.label
         return series
 
 
@@ -120,32 +117,30 @@ class NumericInputQuestion(Question):
 
     data_type = float
 
-    def add_answer(self, value):
+    def add_answer(self, value, **kwargs):  #pylint:disable=unused-argument
         try:
             super(NumericInputQuestion, self).add_answer(value)
         except ValueError:
-            value = value.replace(',', '.')
-            super(NumericInputQuestion, self).add_answer(value)
+            super(NumericInputQuestion, self).add_answer(value.replace(',', '.'))
 
-    def summary(self, labels=True, **kwargs):
-        return self.to_series(labels=labels).describe()
+    def summary(self, **kwargs):
+        return self.to_series().describe()
 
 
 class TextInputQuestion(Question):
-    """docstring for TextInputQuestion"""
 
-    def add_answer(self, value):
+    def add_answer(self, value, **kwargs):  #pylint:disable=unused-argument
         if not value:
             value = ''
         super(TextInputQuestion, self).add_answer(value)
 
-    def summary(self, labels=True, **kwargs):
+    def summary(self, **kwargs):
         str_corpus = " ".join(self.answers).lower()
         words = re.sub(r"[^\w]", " ", str_corpus).split()
         stop_words = many_stop_words.get_stop_words(kwargs.get('language', 'en'))
         filtered_words = [word for word in words if word not in stop_words]
         summary_series = pd.Series(filtered_words).value_counts()[:20]
-        summary_series.name = self.label if labels else self.name
+        summary_series.name = self.label
         return summary_series
 
 
@@ -153,40 +148,57 @@ class ChoiceQuestion(Question):
 
     def __init__(self, name, label=None, answers=None, choices=None):
         super(ChoiceQuestion, self).__init__(name, label=label, answers=answers)
-        if isinstance(choices, (list, tuple, set)):
-            self.choices = {}
-            for choice in choices:
-                self.choices[choice] = choice
+        self.choices = choices
+
+    @property
+    def choices(self):
+        if self._choices:
+            return list(self._choices.values())
+        return self._choices
+
+    @choices.setter
+    def choices(self, value):
+        if isinstance(value, (list, tuple, set)):
+            self._choices = {} #pylint:disable=attribute-defined-outside-init
+            for choice in value:
+                self._choices[choice] = choice
         else:
-            self.choices = choices
+            self._choices = value #pylint:disable=attribute-defined-outside-init
 
     def clean_labels(self, regex):
         super(ChoiceQuestion, self).clean_labels(regex)
-        if self.choices:
-            for choice in self.choices:
-                self.choices[choice] = re.sub(re.compile(regex), '', self.choices[choice])
+        if self._choices:
+            for choice in self._choices:
+                self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
+
+    def _convert_to_label(self, value):
+        assert self.choices, f"Choices not defined for question {self.name}"
+        if value:
+            try:
+                return self._choices[value]
+            except KeyError:
+                raise ValueError(f"Value {value} unavailable in question {self.name}")
+        return value
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
 
-    def get_answers(self, **kwargs):
-        if kwargs.get('labels'):
-            return [self.choices.get(answer, answer) for answer in self.answers]
-        return super(SingleChoiceQuestion, self).get_answers()
+    def add_answer(self, value, **kwargs):
+        if kwargs.get('convert_to_label'):
+            value = self._convert_to_label(value)
+        if self.choices and value and value not in self.choices:
+            raise ValueError(f"Value {value} unavailable in question {self.name}")
+        super(SingleChoiceQuestion, self).add_answer(value)
 
-    def to_series(self, labels=False):
-        if self.choices:
-            categories = self.choices.values() if labels else self.choices.keys()
-        else:
-            categories = self.get_unique_answers()
-        series = pd.Categorical(self.get_answers(labels=labels), categories=list(categories),
-                                ordered=True)
-        series.name = self.label if labels else self.name
+    def to_series(self):
+        categories = self.choices if self.choices else self.get_unique_answers()
+        series = pd.Categorical(self.answers, categories=categories, ordered=True)
+        series.name = self.label
         return series
 
-    def summary(self, labels=True, **kwargs):
-        summary_series = self.to_series(labels=labels).value_counts()
-        summary_series.name = self.label if labels else self.name
+    def summary(self, **kwargs):
+        summary_series = self.to_series().value_counts()
+        summary_series.name = self.label
         return summary_series
 
 
@@ -194,25 +206,18 @@ class MultipleChoiceQuestion(ChoiceQuestion):
 
     data_type = list
 
-    def get_answers(self, **kwargs):
-        if kwargs.get('labels'):
-            answers = []
-            for answer_list in self.answers:
-                answers.append([self.choices.get(item, item) for item in answer_list])
-            return answers
-        return super(MultipleChoiceQuestion, self).get_answers()
-
-    def add_answer(self, value):
+    def add_answer(self, value, **kwargs):
         if not value:
             value = [value]
+        if kwargs.get('convert_to_label'):
+            value = [self._convert_to_label(val) for val in value]
         super(MultipleChoiceQuestion, self).add_answer(value)
 
-    def summary(self, labels=True, **kwargs):
-        categories = self.choices.values() if labels else self.choices.keys()
-        flat_answers = [item for sublist in self.get_answers(labels=labels) for item in sublist]
-        series = pd.Categorical(flat_answers, categories=list(categories), ordered=True)
+    def summary(self, **kwargs):
+        flat_answers = [item for sublist in self.answers for item in sublist]
+        series = pd.Categorical(flat_answers, categories=list(self.choices), ordered=True)
         summary_series = series.value_counts()
-        summary_series.name = self.label if labels else self.name
+        summary_series.name = self.label
         return summary_series
 
     def get_dummies(self):
