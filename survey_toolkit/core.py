@@ -216,12 +216,20 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(MultipleChoiceQuestion, self).add_answer(value)
 
+    def to_dummies(self):
+        prefix_sep = ': '
+        series = self.to_series()
+        stacked_series = series.apply(pd.Series).stack(dropna=False)
+        dummy_df = pd.get_dummies(stacked_series, prefix=self.label, prefix_sep=prefix_sep)\
+            .sum(level=0)
+        if self.choices:
+            cols = [self.label + prefix_sep + choice for choice in self.choices]
+            return dummy_df[cols]
+        return dummy_df
+
     def summary(self, **kwargs):
         flat_answers = [item for sublist in self.answers for item in sublist]
         series = pd.Categorical(flat_answers, categories=list(self.choices), ordered=True)
         summary_series = series.value_counts()
         summary_series.name = self.label
         return summary_series
-
-    def get_dummies(self):
-        raise NotImplementedError

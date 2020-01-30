@@ -48,6 +48,17 @@ def test_add_answer_with_conversion_to_label(question):
 
 def test_to_series(question):
     series = question.to_series()
-    assert all(
-        series == pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
-    )
+    expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
+    assert all(series == expected)
+
+
+def test_to_dummies(question):
+    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    expected = pd.DataFrame({
+        'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
+        'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
+        'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
+        'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
+        'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
+    })
+    assert all(question.to_dummies() == expected)
