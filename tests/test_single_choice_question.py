@@ -28,7 +28,7 @@ def test_add_answer_not_in_choices(question):
         question.add_answer('Windows Phone')
 
 
-def test_add_answwer_when_choices_given_as_dict(question):
+def test_add_answer_with_conversion_to_label(question):
     question.choices = {1:'Huawei', 2:'iPhone', 3:'Nokia', 4:'Samsung', 5:'Xiaomi'}
     question.add_answer(1, convert_to_label=True)
     assert question.answers[-1] == 'Huawei'
