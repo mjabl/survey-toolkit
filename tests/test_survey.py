@@ -131,7 +131,7 @@ def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv():
         '{"gender": "other"}',
         '{}',
     ]
-    survey = Survey.from_surveyjs(survey_json, survey_results, convert_to_labels=True)
+    survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
     assert question.name == 'gender'

@@ -15,7 +15,7 @@ class Survey:
         self.questions = questions
 
     @classmethod
-    def from_surveyjs(cls, survey_json: dict, results: list = None, convert_to_labels=False,
+    def from_surveyjs(cls, survey_json: dict, results: list = None,
                       default_other_text='other, which?', default_none_text='none'):
         """Builds Survey object from surveyjs' survey json and, optionally, a result set"""
         from .io.surveyjs import MetadataParser, process_result
@@ -24,7 +24,7 @@ class Survey:
         survey = cls(questions=metadata_parser.parse(survey_json))
         if results:
             results = [process_result(json.loads(row)) for row in results]
-            survey.add_results(*results, convert_to_labels=convert_to_labels)
+            survey.add_results(*results, convert_to_labels=True)
         return survey
 
     def add_result(self, convert_to_labels=False, **result):
