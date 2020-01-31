@@ -1,5 +1,6 @@
 # pylint:disable=missing-docstring,redefined-outer-name
-from survey_toolkit.core import Survey, NumericInputQuestion, TextInputQuestion
+from survey_toolkit.core import (Survey, NumericInputQuestion, TextInputQuestion,
+                                 SingleChoiceQuestion)
 
 
 def test_from_surveyjs_parses_numeric_question():
@@ -96,3 +97,43 @@ def test_from_surveyjs_parses_text_question_with_numeric_validator():
     assert question.name == 'age'
     assert question.label == "How old are you?"
     assert question.answers == [20, 30, 35.5, 35.5, None]
+
+
+def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv():
+    survey_json = {
+        "pages": [
+            {
+                "name": "page1",
+                "elements": [
+                    {
+                        "type": "radiogroup",
+                        "name": "gender",
+                        "title": "What's your gender?",
+                        "hasOther": True,
+                        "choices": [
+                            {
+                                "value": "male",
+                                "text": "Male"
+                            },
+                            {
+                                "value": "female",
+                                "text": "Female"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    survey_results = [
+        '{"gender": "male"}',
+        '{"gender": "female"}',
+        '{"gender": "other"}',
+        '{}',
+    ]
+    survey = Survey.from_surveyjs(survey_json, survey_results, convert_to_labels=True)
+    question = survey.questions[0]
+    assert type(question) == SingleChoiceQuestion
+    assert question.name == 'gender'
+    assert question.label == "What's your gender?"
+    assert question.answers == ["Male", "Female", "other, which?", None]
