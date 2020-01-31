@@ -15,7 +15,7 @@ class Survey:
         self.questions = questions
 
     @classmethod
-    def from_surveyjs(cls, survey_json: dict, results: list = None,
+    def from_surveyjs(cls, survey_json: dict, results: list = None, convert_to_labels=False,
                       default_other_text='other, which?', default_none_text='none'):
         """Builds Survey object from surveyjs' survey json and, optionally, a result set"""
         from .io.surveyjs import MetadataParser, process_result
@@ -24,22 +24,22 @@ class Survey:
         survey = cls(questions=metadata_parser.parse(survey_json))
         if results:
             results = [process_result(json.loads(row)) for row in results]
-            survey.add_results(*results)
+            survey.add_results(*results, convert_to_labels=convert_to_labels)
         return survey
 
-    def add_result(self, **kwargs):
+    def add_result(self, convert_to_labels=False, **result):
         for question in self.questions:
-            question.add_answer(kwargs.get(question.name, None))
+            question.add_answer(result.get(question.name, None),
+                                convert_to_labels=convert_to_labels)
 
-    # TODO: implement conversion to labels to be used by from_surveyjs
-    def add_results(self, *args):
-        for result in args:
-            self.add_result(**result)
+    def add_results(self, *results, convert_to_labels=False):
+        for result in results:
+            self.add_result(**result, convert_to_labels=convert_to_labels)
 
-    def get_results(self, labels=False) -> OrderedDict:
+    def get_results(self) -> OrderedDict:
         results = OrderedDict()
         for question in self.questions:
-            key = question.label if labels else question.name
+            key = question.label
             assert key not in results, f"Duplicate key: {key}"
             results[key] = question.answers
         return OrderedDict(results)
@@ -172,7 +172,7 @@ class ChoiceQuestion(Question):
             for choice in self._choices:
                 self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
 
-    def _convert_to_label(self, value):
+    def _convert_to_labels(self, value):
         assert self.choices, f"Choices not defined for question {self.name}"
         if value:
             try:
@@ -185,8 +185,8 @@ class ChoiceQuestion(Question):
 class SingleChoiceQuestion(ChoiceQuestion):
 
     def add_answer(self, value, **kwargs):
-        if kwargs.get('convert_to_label'):
-            value = self._convert_to_label(value)
+        if kwargs.get('convert_to_labels'):
+            value = self._convert_to_labels(value)
         if self.choices and value and value not in self.choices:
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(SingleChoiceQuestion, self).add_answer(value)
@@ -210,8 +210,8 @@ class MultipleChoiceQuestion(ChoiceQuestion):
     def add_answer(self, value, **kwargs):
         if not isinstance(value, (list, tuple, set)):
             value = [value]
-        if kwargs.get('convert_to_label'):
-            value = [self._convert_to_label(val) for val in value]
+        if kwargs.get('convert_to_labels'):
+            value = [self._convert_to_labels(val) for val in value]
         if self.choices and any(val not in self.choices for val in value if val):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(MultipleChoiceQuestion, self).add_answer(value)
