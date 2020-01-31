@@ -203,11 +203,11 @@ class MultipleChoiceQuestion(ChoiceQuestion):
     data_type = list
 
     def add_answer(self, value, **kwargs):
-        if not isinstance(value, (list, tuple, set)):
+        if isinstance(value, (int, float, str)):
             value = [value]
-        if kwargs.get('convert_to_labels'):
+        if value and kwargs.get('convert_to_labels'):
             value = [self._convert_to_labels(val) for val in value]
-        if self.choices and any(val not in self.choices for val in value if val):
+        if value and self.choices and any(val not in self.choices for val in value if val):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(MultipleChoiceQuestion, self).add_answer(value)
 
