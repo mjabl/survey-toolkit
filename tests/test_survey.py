@@ -57,7 +57,7 @@ def test_from_surveyjs_parses_text_question_with_numeric_validator(basic_surveyj
     assert question.answers == [20, 30, 35.5, 35.5, None]
 
 
-def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv(basic_surveyjs_json):
+def test_from_surveyjs_parses_radiogroup_question(basic_surveyjs_json):
     question_json = {
         "type": "radiogroup", "name": "gender", "title": "What's your gender?", "hasOther": True,
         "choices": [
