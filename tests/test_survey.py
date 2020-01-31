@@ -1,5 +1,6 @@
 # pylint:disable=missing-docstring,redefined-outer-name
-from survey_toolkit.core import Survey, NumericInputQuestion
+from survey_toolkit.core import Survey, NumericInputQuestion, TextInputQuestion
+
 
 def test_from_surveyjs_parses_numeric_question():
     survey_json = {
@@ -27,8 +28,37 @@ def test_from_surveyjs_parses_numeric_question():
     question = survey.questions[0]
     assert type(question) == NumericInputQuestion
     assert question.name == 'age'
-    assert question.label == 'How old are you?'
+    assert question.label == "How old are you?"
     assert question.answers == [20, 30, 35.5, None]
+
+
+def test_from_surveyjs_parses_text_question():
+    survey_json = {
+        "pages": [
+            {
+                "name": "page1",
+                "elements": [
+                    {
+                        "type": "text",
+                        "name": "surveyjsOpinion",
+                        "title": "How do you like the surveyjs service?",
+                    }
+                ]
+            }
+        ]
+    }
+    survey_results = [
+        '{"surveyjsOpinion": "it\'s fantastic!"}',
+        '{"surveyjsOpinion": "sux!"}',
+        '{"surveyjsOpinion": ""}',
+        '{}',
+    ]
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    question = survey.questions[0]
+    assert type(question) == TextInputQuestion
+    assert question.name == 'surveyjsOpinion'
+    assert question.label == "How do you like the surveyjs service?"
+    assert question.answers == ["it's fantastic!", "sux!", "", ""]
 
 
 def test_from_surveyjs_parses_text_question_with_numeric_validator():
@@ -64,5 +94,5 @@ def test_from_surveyjs_parses_text_question_with_numeric_validator():
     question = survey.questions[0]
     assert type(question) == NumericInputQuestion
     assert question.name == 'age'
-    assert question.label == 'How old are you?'
+    assert question.label == "How old are you?"
     assert question.answers == [20, 30, 35.5, 35.5, None]
