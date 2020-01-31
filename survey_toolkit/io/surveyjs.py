@@ -99,7 +99,7 @@ class MetadataParser:  # pylint: disable=too-few-public-methods
         if self.label_stack:
             kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
         choices = self._parse_value_text_list(kwargs['choices'])
-        if kwargs.get('hasNoneOther'):
+        if kwargs.get('hasOther'):
             other_text = kwargs.get('otherText', self.default_other_text)
             choices['other'] = other_text
             self.question_list.append(SingleChoiceQuestion(kwargs['name'], label=kwargs['title'],
