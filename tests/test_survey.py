@@ -1,7 +1,7 @@
 # pylint:disable=missing-docstring,redefined-outer-name
 import pytest
 from survey_toolkit.core import (Survey, NumericInputQuestion, TextInputQuestion,
-                                 SingleChoiceQuestion)
+                                 SingleChoiceQuestion, MultipleChoiceQuestion)
 
 
 @pytest.fixture()
@@ -84,3 +84,26 @@ def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_list(bas
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
     assert question.answers == ["Male", "Female", "other, which?", None]
+
+
+def test_from_surveyjs_parses_checkbox_question(basic_surveyjs_json):
+    question_json = {
+        "type": "checkbox", "name": "favouritePhoneBrands",
+        "title": "What are your favourite phone brands?", "hasOther": True,
+        "choices": ["iPhone", "Samsung", "Xiaomi", "Nokia", "Huawei"],
+        "hasNone": True
+    }
+    survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
+    survey_results = [
+        '{"favouritePhoneBrands": ["Samsung", "iPhone"]}',
+        '{"favouritePhoneBrands": ["none"]}',
+        '{"favouritePhoneBrands": ["other"]}',
+        '{"favouritePhoneBrands": ["Nokia"]}',
+        '{"favouritePhoneBrands": ["Huawei", "Xiaomi"]}',
+        '{}'
+    ]
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    question = survey.questions[0]
+    assert type(question) == MultipleChoiceQuestion
+    assert question.answers == [["Samsung", "iPhone"], ["none"], ["other, which?"], ["Nokia"],
+                                ["Huawei", "Xiaomi"], None]
