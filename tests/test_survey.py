@@ -57,7 +57,7 @@ def test_from_surveyjs_parses_text_question_with_numeric_validator(basic_surveyj
     assert question.answers == [20, 30, 35.5, 35.5, None]
 
 
-def test_from_surveyjs_parses_radiogroup_question(basic_surveyjs_json):
+def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv(basic_surveyjs_json):
     question_json = {
         "type": "radiogroup", "name": "gender", "title": "What's your gender?", "hasOther": True,
         "choices": [
@@ -67,6 +67,19 @@ def test_from_surveyjs_parses_radiogroup_question(basic_surveyjs_json):
     }
     survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
     survey_results = ['{"gender": "male"}', '{"gender": "female"}', '{"gender": "other"}', '{}']
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    question = survey.questions[0]
+    assert type(question) == SingleChoiceQuestion
+    assert question.answers == ["Male", "Female", "other, which?", None]
+
+
+def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_list(basic_surveyjs_json):
+    question_json = {
+        "type": "radiogroup", "name": "gender", "title": "What's your gender?", "hasOther": True,
+        "choices": ["Male", "Female"]
+    }
+    survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
+    survey_results = ['{"gender": "Male"}', '{"gender": "Female"}', '{"gender": "other"}', '{}']
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
