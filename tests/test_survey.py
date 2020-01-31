@@ -107,3 +107,61 @@ def test_from_surveyjs_parses_checkbox_question(basic_surveyjs_json):
     assert type(question) == MultipleChoiceQuestion
     assert question.answers == [["Samsung", "iPhone"], ["none"], ["other, which?"], ["Nokia"],
                                 ["Huawei", "Xiaomi"], None]
+
+
+def test_from_surveyjs_parses_single_choice_matrix_question_with_lists(basic_surveyjs_json):
+    q_name = "carBrandRatings"
+    q_label = "How do you rate the following car brands?"
+    question_json = {
+        "type": "matrix", "name": q_name, "title": q_label, "columns": ["1", "2", "3", "4", "5"],
+        "rows": ["Peugeot", "Skoda"]
+    }
+    survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
+    survey_results = [
+        '{"carBrandRatings": {"Peugeot": "1", "Skoda": "5"}}',
+        '{"carBrandRatings": {"Peugeot": "5"}}',
+        '{"carBrandRatings": {"Skoda": "3"}}',
+        '{}'
+    ]
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    assert all(type(question) == SingleChoiceQuestion for question in survey.questions)
+    assert [question.name for question in survey.questions] == [q_name + "_Peugeot",
+                                                                q_name + "_Skoda"]
+    assert [question.label for question in survey.questions] == [q_label + ": Peugeot",
+                                                                 q_label + ": Skoda"]
+    assert [question.answers for question in survey.questions] == [["1", "5", None, None],
+                                                                   ["5", None, "3", None]]
+
+
+def test_from_surveyjs_parses_single_choice_matrix_question_with_dicts(basic_surveyjs_json):
+    q_name = "carBrandRatings"
+    q_label = "How do you rate the following car brands?"
+    question_json = {
+        "type": "matrix", "name": q_name, "title": q_label,
+        "columns": [
+            {"value": "1", "text": "Very bad"},
+            {"value": "2", "text": "Bad"},
+            {"value": "3", "text": "So so"},
+            {"value": "4", "text": "Good"},
+            {"value": "5", "text": "Very good"}
+        ],
+        "rows":[
+            {"value": "peugeot", "text": "Peugeot"},
+            {"value": "skoda", "text": "Skoda"}
+        ]
+    }
+    survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
+    survey_results = [
+        '{"carBrandRatings": {"peugeot": "1", "skoda": "5"}}',
+        '{"carBrandRatings": {"peugeot": "5"}}',
+        '{"carBrandRatings": {"skoda": "3"}}',
+        '{}'
+    ]
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    assert all(type(question) == SingleChoiceQuestion for question in survey.questions)
+    assert [question.name for question in survey.questions] == [q_name + "_peugeot",
+                                                                q_name + "_skoda"]
+    assert [question.label for question in survey.questions] == [q_label + ": Peugeot",
+                                                                 q_label + ": Skoda"]
+    assert [question.answers for question in survey.questions] == [
+        ["Very bad", "Very good", None, None], ["Very good", None, "So so", None]]
