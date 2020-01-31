@@ -59,7 +59,7 @@ def test_from_surveyjs_parses_text_question():
     assert type(question) == TextInputQuestion
     assert question.name == 'surveyjsOpinion'
     assert question.label == "How do you like the surveyjs service?"
-    assert question.answers == ["it's fantastic!", "sux!", "", ""]
+    assert question.answers == ["it's fantastic!", "sux!", "", None]
 
 
 def test_from_surveyjs_parses_text_question_with_numeric_validator():

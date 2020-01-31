@@ -130,11 +130,6 @@ class NumericInputQuestion(Question):
 
 class TextInputQuestion(Question):
 
-    def add_answer(self, value, **kwargs):  #pylint:disable=unused-argument
-        if not value:
-            value = ''
-        super(TextInputQuestion, self).add_answer(value)
-
     def summary(self, **kwargs):
         str_corpus = " ".join(self.answers).lower()
         words = re.sub(r"[^\w]", " ", str_corpus).split()
