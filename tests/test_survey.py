@@ -43,8 +43,6 @@ def test_from_surveyjs_parses_text_question(basic_surveyjs_json):
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == TextInputQuestion
-    assert question.name == 'surveyjsOpinion'
-    assert question.label == "How do you like the surveyjs service?"
     assert question.answers == ["it's fantastic!", "sux!", "", None]
 
 
@@ -56,8 +54,6 @@ def test_from_surveyjs_parses_text_question_with_numeric_validator(basic_surveyj
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == NumericInputQuestion
-    assert question.name == 'age'
-    assert question.label == "How old are you?"
     assert question.answers == [20, 30, 35.5, 35.5, None]
 
 
@@ -74,6 +70,4 @@ def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv(basic
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
-    assert question.name == 'gender'
-    assert question.label == "What's your gender?"
     assert question.answers == ["Male", "Female", "other, which?", None]
