@@ -66,7 +66,6 @@ class MetadataParser:  # pylint: disable=too-few-public-methods
             self._handle_radiogroup(**kwargs)
         elif _type == 'checkbox':
             self._handle_checkbox(**kwargs)
-
         elif _type == 'text':
             validators = kwargs.get('validators', [])
             if (kwargs.get('inputType') == 'number') or\

@@ -165,3 +165,21 @@ def test_from_surveyjs_parses_single_choice_matrix_question_with_dicts(basic_sur
                                                                  q_label + ": Skoda"]
     assert [question.answers for question in survey.questions] == [
         ["Very bad", "Very good", None, None], ["Very good", None, "So so", None]]
+
+
+def test_from_surveyjs_parses_multiple_text(basic_surveyjs_json):
+    question_json = {
+        "type": "multipletext", "name": "name", "title": "What's your name?",
+        "items": [
+          {"name": "firstName", "title": "First name"},
+          {"name": "lastName", "title": "Last name"}
+        ]
+    }
+    survey_json = _get_surveyjs_json(basic_surveyjs_json, question_json)
+    survey_results = ['{"name_firstName": "John", "name_lastName": "Doe"}', '{}']
+    survey = Survey.from_surveyjs(survey_json, survey_results)
+    assert all(type(question) == TextInputQuestion for question in survey.questions)
+    assert [question.name for question in survey.questions] == ['name_firstName', 'name_lastName']
+    assert [question.label for question in survey.questions] == ["What's your name?: First name",
+                                                                 "What's your name?: Last name"]
+    assert [question.answers for question in survey.questions] == [["John", None], ["Doe", None]]
