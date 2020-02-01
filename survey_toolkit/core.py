@@ -9,7 +9,6 @@ import many_stop_words
 
 
 class Survey:
-    """A container for questions"""
 
     def __init__(self, questions):
         self.questions = questions
