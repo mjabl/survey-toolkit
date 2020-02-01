@@ -3,7 +3,7 @@
 
 import json
 import re
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 import pandas as pd
 import many_stop_words
 
@@ -11,6 +11,10 @@ import many_stop_words
 class Survey:
 
     def __init__(self, questions):
+        question_names = [question.name for question in questions]
+        duplicated_names = [name for name, count in Counter(question_names).items() if count > 1]
+        if duplicated_names:
+            raise ValueError(f"Question names must be unique. Duplicate names: {duplicated_names}")
         self.questions = questions
 
     @classmethod

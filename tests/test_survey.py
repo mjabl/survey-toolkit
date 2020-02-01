@@ -1,6 +1,6 @@
 # pylint:disable=missing-docstring,redefined-outer-name
 import pytest
-from survey_toolkit.core import (Survey, NumericInputQuestion, TextInputQuestion,
+from survey_toolkit.core import (Survey, Question, NumericInputQuestion, TextInputQuestion,
                                  SingleChoiceQuestion, MultipleChoiceQuestion)
 
 
@@ -12,6 +12,12 @@ def basic_surveyjs_json():
 def _get_surveyjs_json(basic_surveyjs_json: dict, question: dict):
     basic_surveyjs_json["pages"][0]["elements"].append(question)
     return basic_surveyjs_json
+
+
+def test_survey_raises_exception_when_duplicate_question_names():
+    question = Question('q1')
+    with pytest.raises(ValueError):
+        Survey([question, question])
 
 
 def test_from_surveyjs_parses_numeric_question(basic_surveyjs_json):
