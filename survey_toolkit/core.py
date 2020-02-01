@@ -157,12 +157,23 @@ class ChoiceQuestion(Question):
 
     @choices.setter
     def choices(self, value):
+        # pylint:disable=attribute-defined-outside-init'
+        if value is None:
+            self._choices = value
+            return
         if isinstance(value, (list, tuple, set)):
-            self._choices = {} #pylint:disable=attribute-defined-outside-init
+            choices = {}
             for choice in value:
-                self._choices[choice] = choice
+                choices[choice] = choice
         else:
-            self._choices = value #pylint:disable=attribute-defined-outside-init
+            choices = value
+        try:
+            self._choices = {}
+            for choice in choices:
+                self._choices[int(choice)] = choices[choice]
+        except ValueError:
+            self._choices = choices
+
 
     def clean_labels(self, regex):
         super(ChoiceQuestion, self).clean_labels(regex)
