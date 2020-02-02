@@ -119,11 +119,11 @@ class Question:
 
 class NumericInputQuestion(Question):
 
-    def __init__(self, name, label=None, answers=None, choices=None):
+    def __init__(self, name, label=None, answers=None):
         super(NumericInputQuestion, self).__init__(name, label=label, answers=answers)
         self.data_type = float
 
-    def add_answer(self, value, **kwargs):  #pylint:disable=unused-argument
+    def add_answer(self, value):
         try:
             super(NumericInputQuestion, self).add_answer(value)
         except ValueError:
@@ -157,7 +157,7 @@ class ChoiceQuestion(Question):
 
     @choices.setter
     def choices(self, value):
-        # pylint:disable=attribute-defined-outside-init'a
+        # pylint:disable=attribute-defined-outside-init
         if value is None:
             self._choices = value
             return
