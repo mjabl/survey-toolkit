@@ -37,7 +37,7 @@ def test_add_answer_not_in_choices(question):
         question.add_answer('Windows Phone')
 
 
-def test_add_answer_with_conversion_to_label(question):
+def test_add_answer_when_choices_given_as_dict(question):
     question.choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
     question.add_answer([1, 2])
     question.add_answer(None)
@@ -45,21 +45,21 @@ def test_add_answer_with_conversion_to_label(question):
     assert question.answers[-1] is None
 
 
-def test_to_series(question):
-    expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
-    assert all(question.to_series() == expected)
-
-
-def test_to_dummies(question):
-    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
-    expected = pd.DataFrame({
-        'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
-        'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
-        'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
-        'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
-        'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
-    })
-    assert all(question.to_dummies() == expected)
-
-
-some_ans = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+# def test_to_series(question):
+#     expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
+#     assert all(question.to_series() == expected)
+#
+#
+# def test_to_dummies(question):
+#     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+#     expected = pd.DataFrame({
+#         'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
+#         'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
+#         'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
+#         'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
+#         'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
+#     })
+#     assert all(question.to_dummies() == expected)
+#
+#
+# some_ans = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
