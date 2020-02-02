@@ -6,8 +6,7 @@ from survey_toolkit.core import MultipleChoiceQuestion
 
 @pytest.fixture
 def question():
-    return MultipleChoiceQuestion('favouritePhone', 'What are your favourite phone brands?',
-                                  [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
+    return MultipleChoiceQuestion('favouritePhone', 'What are your favourite phone brands?')
 
 
 def test_add_answer_when_no_choices_given(question):
@@ -39,10 +38,10 @@ def test_add_answer_not_in_choices(question):
 
 
 def test_add_answer_with_conversion_to_label(question):
-    question.choices = {1:'Huawei', 2:'iPhone', 3:'Nokia', 4:'Samsung', 5:'Xiaomi'}
-    question.add_answer([1, 2], convert_to_labels=True)
-    question.add_answer(None, convert_to_labels=True)
-    assert question.answers[-2] == ['Huawei', 'iPhone']
+    question.choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
+    question.add_answer([1, 2])
+    question.add_answer(None)
+    assert question.answers[-2] == [1, 2]
     assert question.answers[-1] is None
 
 
@@ -61,3 +60,6 @@ def test_to_dummies(question):
         'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
     })
     assert all(question.to_dummies() == expected)
+
+
+some_ans = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]

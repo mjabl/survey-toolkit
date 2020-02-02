@@ -157,6 +157,21 @@ class ChoiceQuestion(Question):
 
     @choices.setter
     def choices(self, value):
+        self._set_choices(value)
+
+    def get_choice_labels(self):
+        try:
+            return list(self.choices.values())
+        except AttributeError:
+            return self.choices
+
+    def clean_labels(self, regex):
+        super(ChoiceQuestion, self).clean_labels(regex)
+        if self._choices:
+            for choice in self._choices:
+                self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
+
+    def _set_choices(self, value):
         # pylint:disable=attribute-defined-outside-init
         if value is None:
             self._choices = value
@@ -171,21 +186,8 @@ class ChoiceQuestion(Question):
             self._choices = {}
             for choice in choices:
                 self._choices[int(choice)] = choices[choice]
-            self.data_type = int
         except ValueError:
             self._choices = choices
-
-    def get_choice_labels(self):
-        try:
-            return list(self.choices.values())
-        except AttributeError:
-            return self.choices
-
-    def clean_labels(self, regex):
-        super(ChoiceQuestion, self).clean_labels(regex)
-        if self._choices:
-            for choice in self._choices:
-                self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
@@ -199,6 +201,11 @@ class SingleChoiceQuestion(ChoiceQuestion):
         summary_series = self.to_label_series().value_counts()
         summary_series.name = self.label
         return summary_series
+
+    def _set_choices(self, value):
+        super(SingleChoiceQuestion, self)._set_choices(value)
+        if self.choices and all(isinstance(choice, int) for choice in self.choices):
+            self.data_type = int
 
     def _to_series(self, to_labels: bool):
         answers = self.answers
@@ -219,7 +226,9 @@ class SingleChoiceQuestion(ChoiceQuestion):
 
 class MultipleChoiceQuestion(ChoiceQuestion):
 
-    data_type = list  # FIXME
+    def __init__(self, name, label=None, answers=None, choices=None):
+        super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers, choices=choices)
+        self.data_type = list
 
     def add_answer(self, value):
         if isinstance(value, (int, float, str)):
