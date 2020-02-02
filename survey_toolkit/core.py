@@ -74,7 +74,7 @@ class Question:
     def __init__(self, name, label=None, answers=None):
         self.name = name
         self._label = label
-        self.answers = answers
+        self.answers = answers if answers else []
         self.data_type = str
 
     def __repr__(self):
@@ -87,9 +87,7 @@ class Question:
         return self.name
 
     def add_answer(self, value):
-        if not self.answers:
-            self.answers = []
-        if value:
+        if value is not None:
             value = self.data_type(value)
         self.answers.append(value)
 
@@ -110,12 +108,14 @@ class Question:
         self.clean_labels(regex='<.*?>')
 
     def to_series(self):
-        return pd.Series(self.answers, name=self.name)
+        return self._to_series(to_labels=False)
 
     def to_label_series(self):
-        series = self.to_series()
-        series.name = self.label
-        return series
+        return self._to_series(to_labels=True)
+
+    def _to_series(self, to_labels: bool):
+        return pd.Series(self.answers, name=self.label if to_labels else self.name)
+
 
 class NumericInputQuestion(Question):
 
@@ -187,43 +187,44 @@ class ChoiceQuestion(Question):
             for choice in self._choices:
                 self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
 
-    def _convert_to_labels(self, value):
-        assert self.choices, f"Choices not defined for question {self.name}"
-        if value:
-            try:
-                return self._choices[value]
-            except KeyError:
-                raise ValueError(f"Value {value} unavailable in question {self.name}")
-        return value
-
 
 class SingleChoiceQuestion(ChoiceQuestion):
 
     def add_answer(self, value):
-        if self.choices and value and value not in self.choices:
+        if self.choices and value and value not in list(self.choices):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(SingleChoiceQuestion, self).add_answer(value)
-
-    def to_label_series(self):
-        categories = self.get_choice_labels() if self.choices else self.get_unique_answers()
-        series = pd.Categorical(self.answers, categories=categories, ordered=True)
-        series.name = self.label
-        return series
 
     def summary(self, **kwargs):
         summary_series = self.to_label_series().value_counts()
         summary_series.name = self.label
         return summary_series
 
+    def _to_series(self, to_labels: bool):
+        answers = self.answers
+        if to_labels:
+            series_name = self.label
+            if self.choices:
+                answers = [self.choices[answer] if answer else None for answer in self.answers]
+                categories = self.get_choice_labels()
+            else:
+                categories = self.get_unique_answers()
+        else:
+            series_name = self.name
+            categories = list(self.choices)
+        series = pd.Categorical(answers, categories=categories, ordered=True)
+        series.name = series_name
+        return series
+
 
 class MultipleChoiceQuestion(ChoiceQuestion):
 
-    data_type = list
+    data_type = list  # FIXME
 
     def add_answer(self, value):
         if isinstance(value, (int, float, str)):
             value = [value]
-        if value and self.choices and any(val not in self.choices for val in value if val):
+        if value and self.choices and any(val not in list(self.choices) for val in value if val):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(MultipleChoiceQuestion, self).add_answer(value)
 
