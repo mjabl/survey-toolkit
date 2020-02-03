@@ -297,19 +297,26 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         summary_series.name = self.label
         return summary_series
 
-    def _get_unique_answers(self, answers):
-        answers = [answer for answer_list in self.answers for answer in answer_list]
-        return super(MultipleChoiceQuestion, self)._get_unique_answers(answers)
+    @staticmethod
+    def _get_unique_answers(answers):
+        flat_answers = []
+        for answer_list in answers:
+            if answer_list is not None:
+                flat_answers.extend(answer_list)
+        return sorted(set(flat_answers))
 
     def _to_series(self, answers: list, to_labels: bool):
         if to_labels:
             answers = []
             for answer_list in self.answers:
-                converted_answer_list = []
-                for answer in answer_list:
-                    converted_answer = self.choices[answer] if answer is not None else None
-                    converted_answer_list.append(converted_answer)
-                answers.append(converted_answer_list)
+                if answer_list:
+                    converted_answer_list = []
+                    for answer in answer_list:
+                        converted_answer = self.choices[answer] if answer is not None else None
+                        converted_answer_list.append(converted_answer)
+                    answers.append(converted_answer_list)
+                else:
+                    answers.append(None)
         else:
             answers = self.answers
         return super(MultipleChoiceQuestion, self)._to_series(answers, to_labels)
@@ -324,5 +331,10 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         return dummy_df[cols]
 
     def _get_optimized_answers(self, optimization_map: dict):
-        return [optimization_map[val] if val is not None else None
-                for answer_list in self.answers for val in answer_list]
+        optimized_answers = []
+        for answer_list in self.answers:
+            if answer_list is not None:
+                optimized_answers.append([optimization_map[val] for val in answer_list])
+            else:
+                optimized_answers.append(None)
+        return optimized_answers
