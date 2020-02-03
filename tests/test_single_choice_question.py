@@ -50,7 +50,7 @@ def test_to_label_series(question):
     choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
     question.choices = choices
     question.answers = answers
-    series = question.to_label_series()
+    series = question.to_series(to_labels=True)
     expected = pd.Categorical(answers, categories=choices, ordered=True)
     expected.name = 'What is your favourite phone brand?'
     assert all(series.dropna() == expected.dropna())
@@ -62,7 +62,7 @@ def test_to_label_series_when_choices_given_as_dict(question):
     choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
     question.choices = choices
     question.answers = [2, 1, 5, 1, None, 3, 4]
-    series = question.to_label_series()
+    series = question.to_series(to_labels=True)
     expected = pd.Categorical(['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi'],
                                categories=list(choices.values()), ordered=True)
     expected.name = 'What is your favourite phone brand?'

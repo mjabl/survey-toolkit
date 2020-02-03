@@ -38,13 +38,13 @@ class Survey:
         for result in results:
             self.add_result(**result)
 
-    def get_results(self) -> OrderedDict:
-        results = OrderedDict()
-        for question in self.questions:
-            key = question.label
-            assert key not in results, f"Duplicate key: {key}"
-            results[key] = question.answers
-        return OrderedDict(results)
+    # def get_results(self) -> OrderedDict:
+    #     results = OrderedDict()
+    #     for question in self.questions:
+    #         key = question.label
+    #         assert key not in results, f"Duplicate key: {key}"
+    #         results[key] = question.answers
+    #     return OrderedDict(results)
 
     def summary(self, language='en', **kwargs):
         return [question.summary(language=language, **kwargs)
@@ -58,7 +58,7 @@ class Survey:
         for question in self.questions:
             question.clean_html_labels()
 
-    def to_pandas(self) -> pd.DataFrame:
+    def to_pandas(self, to_labels=False, to_dummies=False) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data"""
         return pd.DataFrame.from_dict(self.get_results())
 
@@ -105,11 +105,8 @@ class Question:
     def clean_html_labels(self):
         self._clean_labels(regex='<.*?>')
 
-    def to_series(self):
-        return self._to_series(answers=self.answers, to_labels=False)
-
-    def to_label_series(self):
-        return self._to_series(answers=self.answers, to_labels=True)
+    def to_series(self, to_labels=False):
+        return self._to_series(answers=self.answers, to_labels=to_labels)
 
     def _clean_labels(self, regex):
         if self._label:
@@ -238,7 +235,7 @@ class SingleChoiceQuestion(ChoiceQuestion):
         super(SingleChoiceQuestion, self)._add_answer(value)
 
     def _summary(self, **kwargs):
-        summary_series = self.to_label_series().value_counts()
+        summary_series = self.to_series(to_labels=True).value_counts()
         summary_series.name = self.label
         return summary_series
 

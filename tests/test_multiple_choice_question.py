@@ -58,7 +58,7 @@ def test_to_series(question):
 def test_to_label_series(question):
     question.choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
     question.answers = [[2, 1], None, [5], [3, 4]]
-    series = question.to_label_series()
+    series = question.to_series(to_labels=True)
     expected = pd.Series([['Samsung', 'iPhone'], None, ['Nokia'], ['Huawei', 'Xiaomi']],
                          name='What are your favourite phone brands?')
     assert all(series.dropna() == expected.dropna())
