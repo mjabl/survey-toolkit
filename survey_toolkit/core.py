@@ -110,6 +110,7 @@ class Question:
     def _clean_labels(self, regex):
         if self._label:
             self._label = re.sub(re.compile(regex), '', self._label)
+
     def _add_answer(self, value):
         if value is not None:
             value = self.data_type(value)
@@ -179,9 +180,11 @@ class ChoiceQuestion(Question):
 
     def _clean_labels(self, regex):
         super(ChoiceQuestion, self)._clean_labels(regex)
-        if self._choices:
-            for choice in self._choices:
-                self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
+        if self.choices:
+            new_choices = {}
+            for choice in self.choices:
+                new_choices[choice] = re.sub(re.compile(regex), '', self.choices[choice])
+            self.choices = new_choices
 
     def _set_choices(self, value):
         # pylint:disable=attribute-defined-outside-init
