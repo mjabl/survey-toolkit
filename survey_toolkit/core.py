@@ -65,7 +65,7 @@ class Survey:
         raise NotImplementedError
 
     def to_pandas(self) -> pd.DataFrame:
-        """Creates pandas DataFrame from survey data """
+        """Creates pandas DataFrame from survey data"""
         return pd.DataFrame.from_dict(self.get_results())
 
 
@@ -85,6 +85,16 @@ class Question:
         if self._label:
             return self._label
         return self.name
+
+    @property
+    def answers(self):
+        return self._answers
+
+    @answers.setter
+    def answers(self, value: list):
+        self._answers = []  # pylint: disable=attribute-defined-outside-init
+        for item in value:
+            self._add_answer(item)
 
     def add_answer(self, value):
         self._add_answer(value)
@@ -114,7 +124,7 @@ class Question:
     def _add_answer(self, value):
         if value is not None:
             value = self.data_type(value)
-        self.answers.append(value)
+        self._answers.append(value)
 
     def _to_series(self, answers: list, to_labels: bool):
         return pd.Series(answers, name=self.label if to_labels else self.name)
@@ -178,6 +188,15 @@ class ChoiceQuestion(Question):
         except AttributeError:
             return self.choices
 
+    def optimize(self):
+        """Converts answers and choice keys to numeric values. Useful for exporting data to SPSS/SAS
+        """
+        if self.data_type == int:
+            return
+        opt_map = self._get_optimization_map()
+        self.choices = self._get_optimized_choices(opt_map)
+        self.answers = self._get_optimized_answers(opt_map)
+
     def _clean_labels(self, regex):
         super(ChoiceQuestion, self)._clean_labels(regex)
         if self.choices:
@@ -203,6 +222,18 @@ class ChoiceQuestion(Question):
                 self._choices[int(choice)] = choices[choice]
         except ValueError:
             self._choices = choices
+
+    def _get_optimization_map(self):
+        current_vals = list(self.choices) if self.choices else self.get_unique_answers()
+        return {val: nr + 1 for (nr, val) in enumerate(current_vals)}
+
+    def _get_optimized_choices(self, optimization_map: dict):
+        if self.choices:
+            return {optimization_map[val]: self.choices[val] for val in self.choices}
+        return {nr: val for (val, nr) in optimization_map.items()}
+
+    def _get_optimized_answers(self, optimization_map: dict):
+        return [optimization_map[val] if val is not None else None for val in self.answers]
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
@@ -297,3 +328,7 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             .sum(level=0)
         cols = [prefix + prefix_sep + choice for choice in choices]
         return dummy_df[cols]
+
+    def _get_optimized_answers(self, optimization_map: dict):
+        return [optimization_map[val] if val is not None else None
+                for answer_list in self.answers for val in answer_list]

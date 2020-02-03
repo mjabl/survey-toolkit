@@ -47,8 +47,8 @@ def test_add_answer_when_choices_given_as_dict(question):
 
 def test_to_series(question):
     answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
-    question.answers = answers
     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    question.answers = answers
     series = question.to_series()
     expected = pd.Series(answers, name='favouritePhones')
     assert all(series == expected)
@@ -56,8 +56,8 @@ def test_to_series(question):
 
 
 def test_to_label_series(question):
-    question.answers = [[2, 1], [None], [5], [3, 4]]
     question.choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
+    question.answers = [[2, 1], [None], [5], [3, 4]]
     series = question.to_label_series()
     expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']],
                          name='What are your favourite phone brands?')
@@ -117,3 +117,11 @@ def test_get_dummy_variables_when_no_choices_given(question):
         'favouritePhones_iPhone': 'What are your favourite phone brands?: iPhone',
         'favouritePhones_Samsung': 'What are your favourite phone brands?: Samsung'
     }
+
+
+# def test_optimize(question):
+#     question.choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
+#     question.answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+#     question.optimize()
+#     assert question.choices == {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
+#     assert question.answers == [2, 1, 5, 1, None, 3, 4]
