@@ -204,7 +204,7 @@ class ChoiceQuestion(Question):
 class SingleChoiceQuestion(ChoiceQuestion):
 
     def _add_answer(self, value):
-        if self.choices and value and value not in list(self.choices):
+        if self.choices and value and self.data_type(value) not in list(self.choices):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(SingleChoiceQuestion, self)._add_answer(value)
 

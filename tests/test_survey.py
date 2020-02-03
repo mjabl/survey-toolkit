@@ -76,7 +76,7 @@ def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_kv(basic
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
-    assert question.answers == ["Male", "Female", "other, which?", None]
+    assert question.answers == ['male', 'female', 'other', None]
 
 
 def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_list(basic_surveyjs_json):
@@ -89,7 +89,7 @@ def test_from_surveyjs_parses_radiogroup_question_when_choices_given_as_list(bas
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == SingleChoiceQuestion
-    assert question.answers == ["Male", "Female", "other, which?", None]
+    assert question.answers == ['Male', 'Female', 'other', None]
 
 
 def test_from_surveyjs_parses_checkbox_question(basic_surveyjs_json):
@@ -111,7 +111,7 @@ def test_from_surveyjs_parses_checkbox_question(basic_surveyjs_json):
     survey = Survey.from_surveyjs(survey_json, survey_results)
     question = survey.questions[0]
     assert type(question) == MultipleChoiceQuestion
-    assert question.answers == [["Samsung", "iPhone"], ["none"], ["other, which?"], ["Nokia"],
+    assert question.answers == [["Samsung", "iPhone"], ["none"], ["other"], ["Nokia"],
                                 ["Huawei", "Xiaomi"], None]
 
 
@@ -135,8 +135,8 @@ def test_from_surveyjs_parses_single_choice_matrix_question_with_lists(basic_sur
                                                                 q_name + "_Skoda"]
     assert [question.label for question in survey.questions] == [q_label + ": Peugeot",
                                                                  q_label + ": Skoda"]
-    assert [question.answers for question in survey.questions] == [["1", "5", None, None],
-                                                                   ["5", None, "3", None]]
+    assert [question.answers for question in survey.questions] == [[1, 5, None, None],
+                                                                   [5, None, 3, None]]
 
 
 def test_from_surveyjs_parses_single_choice_matrix_question_with_dicts(basic_surveyjs_json):
@@ -169,8 +169,8 @@ def test_from_surveyjs_parses_single_choice_matrix_question_with_dicts(basic_sur
                                                                 q_name + "_skoda"]
     assert [question.label for question in survey.questions] == [q_label + ": Peugeot",
                                                                  q_label + ": Skoda"]
-    assert [question.answers for question in survey.questions] == [
-        ["Very bad", "Very good", None, None], ["Very good", None, "So so", None]]
+    assert [question.answers for question in survey.questions] == [[1, 5, None, None],
+                                                                   [5, None, 3, None]]
 
 
 def test_from_surveyjs_parses_multiple_text(basic_surveyjs_json):
