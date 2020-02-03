@@ -108,13 +108,13 @@ class Question:
         self.clean_labels(regex='<.*?>')
 
     def to_series(self):
-        return self._to_series(to_labels=False)
+        return self._to_series(answers=self.answers, to_labels=False)
 
     def to_label_series(self):
-        return self._to_series(to_labels=True)
+        return self._to_series(answers=self.answers, to_labels=True)
 
-    def _to_series(self, to_labels: bool):
-        return pd.Series(self.answers, name=self.label if to_labels else self.name)
+    def _to_series(self, answers:list, to_labels: bool):
+        return pd.Series(answers, name=self.label if to_labels else self.name)
 
 
 class NumericInputQuestion(Question):
@@ -254,3 +254,16 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         summary_series = series.value_counts()
         summary_series.name = self.label
         return summary_series
+
+    def _to_series(self, answers:list, to_labels: bool):
+        if to_labels:
+            answers = []
+            for answer_list in self.answers:
+                converted_answer_list = []
+                for answer in answer_list:
+                    converted_answer = self.choices[answer] if answer is not None else None
+                    converted_answer_list.append(converted_answer)
+                answers.append(converted_answer_list)
+        else:
+            answers = self.answers
+        return super(MultipleChoiceQuestion, self)._to_series(answers, to_labels)

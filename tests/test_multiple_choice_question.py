@@ -6,7 +6,7 @@ from survey_toolkit.core import MultipleChoiceQuestion
 
 @pytest.fixture
 def question():
-    return MultipleChoiceQuestion('favouritePhone', 'What are your favourite phone brands?')
+    return MultipleChoiceQuestion('favouritePhones', 'What are your favourite phone brands?')
 
 
 def test_add_answer_when_no_choices_given(question):
@@ -45,11 +45,26 @@ def test_add_answer_when_choices_given_as_dict(question):
     assert question.answers[-1] is None
 
 
-# def test_to_series(question):
-#     expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']])
-#     assert all(question.to_series() == expected)
-#
-#
+def test_to_series(question):
+    answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+    question.answers = answers
+    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    series = question.to_series()
+    expected = pd.Series(answers, name='favouritePhones')
+    assert all(series == expected)
+    assert series.name == expected.name
+
+
+def test_to_label_series(question):
+    question.answers = [[2, 1], [None], [5], [3, 4]]
+    question.choices = {1: 'iPhone', 2: 'Samsung', 3: 'Huawei', 4: 'Xiaomi', 5: 'Nokia'}
+    series = question.to_label_series()
+    expected = pd.Series([['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']],
+                         name='What are your favourite phone brands?')
+    assert all(series == expected)
+    assert series.name == expected.name
+
+
 # def test_to_dummies(question):
 #     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
 #     expected = pd.DataFrame({
