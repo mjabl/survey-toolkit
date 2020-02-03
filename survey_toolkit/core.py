@@ -52,7 +52,7 @@ class Survey:
 
     def clean_labels(self, regex):
         for question in self.questions:
-            question._clean_labels(regex)
+            question.clean_labels(regex)
 
     def clean_html_labels(self):
         for question in self.questions:
@@ -96,7 +96,7 @@ class Question:
         return self._summary(**kwargs)
 
     def clean_labels(self, regex):
-        self._clean_labels(self, regex)
+        self._clean_labels(regex)
 
     def clean_html_labels(self):
         self._clean_labels(regex='<.*?>')
@@ -115,17 +115,18 @@ class Question:
             value = self.data_type(value)
         self.answers.append(value)
 
-    def _to_series(self, answers:list, to_labels: bool):
+    def _to_series(self, answers: list, to_labels: bool):
         return pd.Series(answers, name=self.label if to_labels else self.name)
 
-    def _get_unique_answers(self, answers):
+    def _summary(self, **kwargs):  # pylint:disable=unused-argument
+        name = self.label
+        return f"Name: {name}, summary unavailable"
+
+    @staticmethod
+    def _get_unique_answers(answers):
         unique_answers = set(answers)
         unique_answers.discard(None)
         return sorted(unique_answers)
-
-    def _summary(self, **kwargs):
-        name = self.label
-        return f"Name: {name}, summary unavailable"
 
 
 class NumericInputQuestion(Question):
@@ -238,7 +239,8 @@ class SingleChoiceQuestion(ChoiceQuestion):
 class MultipleChoiceQuestion(ChoiceQuestion):
 
     def __init__(self, name, label=None, answers=None, choices=None):
-        super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers, choices=choices)
+        super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers,
+                                                     choices=choices)
         self.data_type = list
 
     def to_dummies(self, to_labels=False):
@@ -250,9 +252,8 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         if self.choices:
             return {self.name + '_' + choice: self.label + ': ' + self.choices[choice]
                     for choice in self.choices}
-        else:
-            return {self.name + '_' + answer: self.label + ': ' + answer
-                    for answer in self.get_unique_answers()}
+        return {self.name + '_' + answer: self.label + ': ' + answer
+                for answer in self.get_unique_answers()}
 
     def _add_answer(self, value):
         if isinstance(value, (int, float, str)):
@@ -272,10 +273,7 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         answers = [answer for answer_list in self.answers for answer in answer_list]
         return super(MultipleChoiceQuestion, self)._get_unique_answers(answers)
 
-    def _set_choices(self, value):
-        super(MultipleChoiceQuestion, self)._set_choices(value)
-
-    def _to_series(self, answers:list, to_labels: bool):
+    def _to_series(self, answers: list, to_labels: bool):
         if to_labels:
             answers = []
             for answer_list in self.answers:
