@@ -52,7 +52,7 @@ class Survey:
 
     def clean_labels(self, regex):
         for question in self.questions:
-            question.clean_labels(regex)
+            question._clean_labels(regex)
 
     def clean_html_labels(self):
         for question in self.questions:
@@ -87,29 +87,33 @@ class Question:
         return self.name
 
     def add_answer(self, value):
-        if value is not None:
-            value = self.data_type(value)
-        self.answers.append(value)
+        self._add_answer(value)
 
     def get_unique_answers(self):
         return self._get_unique_answers(self.answers)
 
-    def summary(self, **kwargs):  # pylint:disable=unused-argument
-        name = self.label
-        return f"Name: {name}, summary unavailable"
+    def summary(self, **kwargs):
+        return self._summary(**kwargs)
 
     def clean_labels(self, regex):
-        if self._label:
-            self._label = re.sub(re.compile(regex), '', self._label)
+        self._clean_labels(self, regex)
 
     def clean_html_labels(self):
-        self.clean_labels(regex='<.*?>')
+        self._clean_labels(regex='<.*?>')
 
     def to_series(self):
         return self._to_series(answers=self.answers, to_labels=False)
 
     def to_label_series(self):
         return self._to_series(answers=self.answers, to_labels=True)
+
+    def _clean_labels(self, regex):
+        if self._label:
+            self._label = re.sub(re.compile(regex), '', self._label)
+    def _add_answer(self, value):
+        if value is not None:
+            value = self.data_type(value)
+        self.answers.append(value)
 
     def _to_series(self, answers:list, to_labels: bool):
         return pd.Series(answers, name=self.label if to_labels else self.name)
@@ -119,6 +123,10 @@ class Question:
         unique_answers.discard(None)
         return sorted(unique_answers)
 
+    def _summary(self, **kwargs):
+        name = self.label
+        return f"Name: {name}, summary unavailable"
+
 
 class NumericInputQuestion(Question):
 
@@ -126,19 +134,19 @@ class NumericInputQuestion(Question):
         super(NumericInputQuestion, self).__init__(name, label=label, answers=answers)
         self.data_type = float
 
-    def add_answer(self, value):
+    def _add_answer(self, value):
         try:
-            super(NumericInputQuestion, self).add_answer(value)
+            super(NumericInputQuestion, self)._add_answer(value)
         except ValueError:
-            super(NumericInputQuestion, self).add_answer(value.replace(',', '.'))
+            super(NumericInputQuestion, self)._add_answer(value.replace(',', '.'))
 
-    def summary(self, **kwargs):
+    def _summary(self, **kwargs):
         return self.to_series().describe()
 
 
 class TextInputQuestion(Question):
 
-    def summary(self, **kwargs):
+    def _summary(self, **kwargs):
         str_corpus = " ".join(self.answers).lower()
         words = re.sub(r"[^\w]", " ", str_corpus).split()
         stop_words = many_stop_words.get_stop_words(kwargs.get('language', 'en'))
@@ -168,8 +176,8 @@ class ChoiceQuestion(Question):
         except AttributeError:
             return self.choices
 
-    def clean_labels(self, regex):
-        super(ChoiceQuestion, self).clean_labels(regex)
+    def _clean_labels(self, regex):
+        super(ChoiceQuestion, self)._clean_labels(regex)
         if self._choices:
             for choice in self._choices:
                 self._choices[choice] = re.sub(re.compile(regex), '', self._choices[choice])
@@ -195,12 +203,12 @@ class ChoiceQuestion(Question):
 
 class SingleChoiceQuestion(ChoiceQuestion):
 
-    def add_answer(self, value):
+    def _add_answer(self, value):
         if self.choices and value and value not in list(self.choices):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
-        super(SingleChoiceQuestion, self).add_answer(value)
+        super(SingleChoiceQuestion, self)._add_answer(value)
 
-    def summary(self, **kwargs):
+    def _summary(self, **kwargs):
         summary_series = self.to_label_series().value_counts()
         summary_series.name = self.label
         return summary_series
@@ -233,13 +241,6 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers, choices=choices)
         self.data_type = list
 
-    def add_answer(self, value):
-        if isinstance(value, (int, float, str)):
-            value = [value]
-        if value and self.choices and any(val not in list(self.choices) for val in value if val):
-            raise ValueError(f"Value {value} unavailable in question {self.name}")
-        super(MultipleChoiceQuestion, self).add_answer(value)
-
     def to_dummies(self, to_labels=False):
         if to_labels:
             return self._to_dummies(self.get_choice_labels(), self.label, prefix_sep=': ')
@@ -253,7 +254,14 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             return {self.name + '_' + answer: self.label + ': ' + answer
                     for answer in self.get_unique_answers()}
 
-    def summary(self, **kwargs):
+    def _add_answer(self, value):
+        if isinstance(value, (int, float, str)):
+            value = [value]
+        if value and self.choices and any(val not in list(self.choices) for val in value if val):
+            raise ValueError(f"Value {value} unavailable in question {self.name}")
+        super(MultipleChoiceQuestion, self)._add_answer(value)
+
+    def _summary(self, **kwargs):
         flat_answers = [item for sublist in self.answers for item in sublist]
         series = pd.Categorical(flat_answers, categories=list(self.choices), ordered=True)
         summary_series = series.value_counts()
