@@ -58,12 +58,6 @@ class Survey:
         for question in self.questions:
             question.clean_html_labels()
 
-    def filter(self):
-        raise NotImplementedError
-
-    def remove_duplicates(self, keep='ceil'):
-        raise NotImplementedError
-
     def to_pandas(self) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data"""
         return pd.DataFrame.from_dict(self.get_results())
