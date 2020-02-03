@@ -108,6 +108,9 @@ class Question:
     def to_series(self, to_labels=False):
         return self._to_series(answers=self.answers, to_labels=to_labels)
 
+    def to_frame(self, to_labels=False, to_dummies = False, optimize=False):
+        return self._to_frame(to_labels=to_labels, to_dummies=to_dummies, optimize=optimize)
+
     def _clean_labels(self, regex):
         if self._label:
             self._label = re.sub(re.compile(regex), '', self._label)
@@ -119,6 +122,9 @@ class Question:
 
     def _to_series(self, answers: list, to_labels: bool):
         return pd.Series(answers, name=self.label if to_labels else self.name)
+
+    def _to_frame(self, **kwargs):
+        return self.to_series(to_labels=kwargs['to_labels']).to_frame()
 
     def _summary(self, **kwargs):  # pylint:disable=unused-argument
         name = self.label
@@ -225,6 +231,11 @@ class ChoiceQuestion(Question):
 
     def _get_optimized_answers(self, optimization_map: dict):
         return [optimization_map[val] if val is not None else None for val in self.answers]
+
+    def _to_frame(self, **kwargs):
+        if kwargs['optimize']:
+            self.optimize()
+        return super(SingleChoiceQuestion, self)._to_frame(**kwargs)
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
@@ -335,3 +346,8 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             else:
                 optimized_answers.append(None)
         return optimized_answers
+
+    def _to_frame(self, **kwargs):
+        if kwargs['to_dummies']:
+            return self.to_dummies(kwargs['to_labels'])
+        return super(SingleChoiceQuestion, self)._to_frame(**kwargs)
