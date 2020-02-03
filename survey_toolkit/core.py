@@ -247,9 +247,11 @@ class MultipleChoiceQuestion(ChoiceQuestion):
 
     def get_dummy_variables(self):
         if self.choices:
-            return {choice: self.choices[choice] for choice in self.choices}
+            return {self.name + '_' + choice: self.label + ': ' + self.choices[choice]
+                    for choice in self.choices}
         else:
-            return {answer: answer for answer in self.get_unique_answers()}
+            return {self.name + '_' + answer: self.label + ': ' + answer
+                    for answer in self.get_unique_answers()}
 
     def summary(self, **kwargs):
         flat_answers = [item for sublist in self.answers for item in sublist]

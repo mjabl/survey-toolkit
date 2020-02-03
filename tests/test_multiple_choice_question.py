@@ -101,3 +101,19 @@ def test_to_dummies_when_no_choices_given(question):
         'favouritePhones_iPhone': [1, 0, 0, 0],
     })
     assert all(question.to_dummies() == expected)
+
+
+def test_get_dummy_variables(question):
+    question.choices = ['Huawei', 'iPhone']
+    assert question.get_dummy_variables() == {
+        'favouritePhones_Huawei': 'What are your favourite phone brands?: Huawei',
+        'favouritePhones_iPhone': 'What are your favourite phone brands?: iPhone'
+    }
+
+
+def test_get_dummy_variables_when_no_choices_given(question):
+    question.answers = [['Samsung', 'iPhone'], [None]]
+    assert question.get_dummy_variables() == {
+        'favouritePhones_iPhone': 'What are your favourite phone brands?: iPhone',
+        'favouritePhones_Samsung': 'What are your favourite phone brands?: Samsung'
+    }
