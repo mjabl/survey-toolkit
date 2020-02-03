@@ -65,16 +65,39 @@ def test_to_label_series(question):
     assert series.name == expected.name
 
 
-# def test_to_dummies(question):
-#     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
-#     expected = pd.DataFrame({
-#         'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
-#         'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
-#         'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
-#         'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
-#         'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
-#     })
-#     assert all(question.to_dummies() == expected)
-#
-#
-# some_ans = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+def test_to_dummies(question):
+    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    question.answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+    expected = pd.DataFrame({
+        'favouritePhones_Huawei': [0, 0, 0, 1],
+        'favouritePhones_iPhone': [1, 0, 0, 0],
+        'favouritePhones_Nokia': [0, 0, 1, 0],
+        'favouritePhones_Samsung': [1, 0, 0, 0],
+        'favouritePhones_Xiaomi': [0, 0, 0, 1],
+    })
+    assert all(question.to_dummies() == expected)
+
+
+def test_to_dummies_with_conversion_to_labels(question):
+    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    question.answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+    expected = pd.DataFrame({
+        'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
+        'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
+        'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
+        'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
+        'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
+    })
+    assert all(question.to_dummies(to_labels=True) == expected)
+
+
+def test_to_dummies_when_no_choices_given(question):
+    question.answers = [['Samsung', 'iPhone'], [None], ['Nokia'], ['Huawei', 'Xiaomi']]
+    expected = pd.DataFrame({
+        'favouritePhones_Huawei': [0, 0, 0, 1],
+        'favouritePhones_Nokia': [0, 0, 1, 0],
+        'favouritePhones_Samsung': [1, 0, 0, 0],
+        'favouritePhones_Xiaomi': [0, 0, 0, 1],
+        'favouritePhones_iPhone': [1, 0, 0, 0],
+    })
+    assert all(question.to_dummies() == expected)

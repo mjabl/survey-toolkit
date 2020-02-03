@@ -92,9 +92,7 @@ class Question:
         self.answers.append(value)
 
     def get_unique_answers(self):
-        unique_answers = set(self.answers)
-        unique_answers.discard(None)
-        return sorted(unique_answers)
+        return self._get_unique_answers(self.answers)
 
     def summary(self, **kwargs):  # pylint:disable=unused-argument
         name = self.label
@@ -115,6 +113,11 @@ class Question:
 
     def _to_series(self, answers:list, to_labels: bool):
         return pd.Series(answers, name=self.label if to_labels else self.name)
+
+    def _get_unique_answers(self, answers):
+        unique_answers = set(answers)
+        unique_answers.discard(None)
+        return sorted(unique_answers)
 
 
 class NumericInputQuestion(Question):
@@ -173,8 +176,8 @@ class ChoiceQuestion(Question):
 
     def _set_choices(self, value):
         # pylint:disable=attribute-defined-outside-init
-        if value is None:
-            self._choices = value
+        if not value:
+            self._choices = []
             return
         if isinstance(value, (list, tuple, set)):
             choices = {}
@@ -207,12 +210,12 @@ class SingleChoiceQuestion(ChoiceQuestion):
         if self.choices and all(isinstance(choice, int) for choice in self.choices):
             self.data_type = int
 
-    def _to_series(self, to_labels: bool):
-        answers = self.answers
+    def _to_series(self, answers: list, to_labels: bool):
         if to_labels:
             series_name = self.label
             if self.choices:
-                answers = [self.choices[answer] if answer else None for answer in self.answers]
+                answers = [self.choices[answer] if answer is not None else None
+                           for answer in self.answers]
                 categories = self.get_choice_labels()
             else:
                 categories = self.get_unique_answers()
@@ -229,6 +232,11 @@ class MultipleChoiceQuestion(ChoiceQuestion):
     def __init__(self, name, label=None, answers=None, choices=None):
         super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers, choices=choices)
         self.data_type = list
+        self._dummy_variables = self._set_dummy_variables()
+
+    @property
+    def dummy_variables(self):
+        return self._dummy_variables
 
     def add_answer(self, value):
         if isinstance(value, (int, float, str)):
@@ -237,16 +245,10 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             raise ValueError(f"Value {value} unavailable in question {self.name}")
         super(MultipleChoiceQuestion, self).add_answer(value)
 
-    def to_dummies(self):
-        prefix_sep = ': '
-        series = self.to_series()
-        stacked_series = series.apply(pd.Series).stack(dropna=False)
-        dummy_df = pd.get_dummies(stacked_series, prefix=self.label, prefix_sep=prefix_sep)\
-            .sum(level=0)
-        if self.choices:
-            cols = [self.label + prefix_sep + choice for choice in self.choices]
-            return dummy_df[cols]
-        return dummy_df
+    def to_dummies(self, to_labels=False):
+        if to_labels:
+            return self._to_dummies(self.get_choice_labels(), self.label, prefix_sep=': ')
+        return self._to_dummies(list(self.choices), self.name, prefix_sep='_')
 
     def summary(self, **kwargs):
         flat_answers = [item for sublist in self.answers for item in sublist]
@@ -254,6 +256,20 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         summary_series = series.value_counts()
         summary_series.name = self.label
         return summary_series
+
+    def _get_unique_answers(self, answers):
+        answers = [answer for answer_list in self.answers for answer in answer_list]
+        return super(MultipleChoiceQuestion, self)._get_unique_answers(answers)
+
+    def _set_choices(self, value):
+        super(MultipleChoiceQuestion, self)._set_choices(value)
+        self._set_dummy_variables()
+
+    def _set_dummy_variables(self):
+        if self.choices:
+            self._dummy_variables = {choice: self.choices[choice] for choice in self.choices}
+        else:
+            self._dummy_variables = {answer: answer for answer in self.get_unique_answers()}
 
     def _to_series(self, answers:list, to_labels: bool):
         if to_labels:
@@ -267,3 +283,13 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         else:
             answers = self.answers
         return super(MultipleChoiceQuestion, self)._to_series(answers, to_labels)
+
+    def _to_dummies(self, choices: list, prefix: str, prefix_sep: str):
+        series = self.to_series()
+        stacked_series = series.apply(pd.Series).stack(dropna=False)
+        dummy_df = pd.get_dummies(stacked_series, prefix=prefix, prefix_sep=prefix_sep)\
+            .sum(level=0)
+        if choices:
+            cols = [prefix + prefix_sep + choice for choice in choices]
+            return dummy_df[cols]
+        return dummy_df
