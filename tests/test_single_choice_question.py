@@ -35,23 +35,23 @@ def test_add_answer_when_choices_given_as_dict(question):
 
 
 def test_to_series(question):
-    question.answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+    answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+    question.answers = answers
     question.choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
     series = question.to_series()
-    expected = pd.Series(['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi'],
-                         name='favouritePhone')
+    expected = pd.Series(answers, name='favouritePhone')
     assert all(series.dropna() == expected.dropna())
     assert series.name == expected.name
     assert list(series.categories) == list(question.choices)
 
 
 def test_to_label_series(question):
-    question.answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+    answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
     choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
+    question.answers = answers
     question.choices = choices
     series = question.to_label_series()
-    expected = pd.Categorical(['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi'],
-                              categories=choices, ordered=True)
+    expected = pd.Categorical(answers, categories=choices, ordered=True)
     expected.name = 'What is your favourite phone brand?'
     assert all(series.dropna() == expected.dropna())
     assert series.name == expected.name
