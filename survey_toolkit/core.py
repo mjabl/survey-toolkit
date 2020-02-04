@@ -38,14 +38,6 @@ class Survey:
         for result in results:
             self.add_result(**result)
 
-    # def get_results(self) -> OrderedDict:
-    #     results = OrderedDict()
-    #     for question in self.questions:
-    #         key = question.label
-    #         assert key not in results, f"Duplicate key: {key}"
-    #         results[key] = question.answers
-    #     return OrderedDict(results)
-
     def summary(self, language='en', **kwargs):
         return [question.summary(language=language, **kwargs)
                 for question in self.questions]
@@ -58,9 +50,10 @@ class Survey:
         for question in self.questions:
             question.clean_html_labels()
 
-    def to_pandas(self, to_labels=False, to_dummies=False) -> pd.DataFrame:
+    def to_pandas(self, to_labels=False, to_dummies = False, optimize=False) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data"""
-        return pd.DataFrame.from_dict(self.get_results())
+        dfs = [question.to_frame(to_labels, to_dummies, optimize) for question in self.questions]
+        return pd.concat(dfs, axis=1, sort=False)
 
 
 class Question:
