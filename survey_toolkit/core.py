@@ -117,7 +117,7 @@ class Question:
         return pd.Series(answers, name=self.label if to_labels else self.name)
 
     def _to_frame(self, **kwargs):
-        return self.to_series(to_labels=kwargs['to_labels']).to_frame()
+        return pd.DataFrame(self.to_series(to_labels=kwargs['to_labels']))
 
     def _summary(self, **kwargs):  # pylint:disable=unused-argument
         name = self.label
@@ -228,7 +228,7 @@ class ChoiceQuestion(Question):
     def _to_frame(self, **kwargs):
         if kwargs['optimize']:
             self.optimize()
-        return super(SingleChoiceQuestion, self)._to_frame(**kwargs)
+        return super(ChoiceQuestion, self)._to_frame(**kwargs)
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
@@ -343,4 +343,4 @@ class MultipleChoiceQuestion(ChoiceQuestion):
     def _to_frame(self, **kwargs):
         if kwargs['to_dummies']:
             return self.to_dummies(kwargs['to_labels'])
-        return super(SingleChoiceQuestion, self)._to_frame(**kwargs)
+        return super(MultipleChoiceQuestion, self)._to_frame(**kwargs)
