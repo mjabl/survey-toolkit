@@ -58,11 +58,12 @@ class Survey:
 
 class Question:
 
+    data_type = str
+
     def __init__(self, name, label=None, answers=None):
         self.name = name
         self._label = label
         self.answers = answers if answers else []
-        self.data_type = str
 
     def __repr__(self):
         return f"{self.__class__.__name__}({repr(self.__dict__)})"
@@ -133,9 +134,7 @@ class Question:
 
 class NumericInputQuestion(Question):
 
-    def __init__(self, name, label=None, answers=None):
-        super(NumericInputQuestion, self).__init__(name, label=label, answers=answers)
-        self.data_type = float
+    data_type = float
 
     def _add_answer(self, value):
         try:
@@ -268,10 +267,7 @@ class SingleChoiceQuestion(ChoiceQuestion):
 
 class MultipleChoiceQuestion(ChoiceQuestion):
 
-    def __init__(self, name, label=None, answers=None, choices=None):
-        super(MultipleChoiceQuestion, self).__init__(name, label=label, answers=answers,
-                                                     choices=choices)
-        self.data_type = list
+    data_type = list
 
     def to_dummies(self, to_labels=False):
         if to_labels:
