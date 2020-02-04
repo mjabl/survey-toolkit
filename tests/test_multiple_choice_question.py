@@ -80,8 +80,8 @@ def test_to_dummies(question):
 
 
 def test_to_dummies_with_conversion_to_labels(question):
-    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
-    question.answers = [['Samsung', 'iPhone'], None, ['Nokia'], ['Huawei', 'Xiaomi']]
+    question.choices = {1: 'Huawei', 2: 'iPhone', 3: 'Nokia', 4: 'Samsung', 5: 'Xiaomi'}
+    question.answers = [[4, 2], None, [3], [1, 5]]
     expected = pd.DataFrame({
         'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
         'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],

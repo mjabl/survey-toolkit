@@ -271,8 +271,21 @@ class MultipleChoiceQuestion(ChoiceQuestion):
 
     def to_dummies(self, to_labels=False):
         if to_labels:
-            return self._to_dummies(self.get_choice_labels(), self.label, prefix_sep=': ')
-        return self._to_dummies(list(self.choices), self.name, prefix_sep='_')
+            choices = self.get_choice_labels()
+            prefix = self.label
+            prefix_sep = ': '
+        else:
+            choices = list(self.choices)
+            prefix = self.name
+            prefix_sep = '_'
+        choices = choices if choices else self.get_unique_answers()
+        series = self.to_series(to_labels)
+        stacked_series = series.apply(pd.Series).stack(dropna=False)
+        dummy_df = pd.get_dummies(stacked_series, prefix=prefix, prefix_sep=prefix_sep)\
+            .sum(level=0)
+        cols = [prefix + prefix_sep + choice for choice in choices]
+        return dummy_df[cols]
+
 
     def get_dummy_variables(self):
         if self.choices:
