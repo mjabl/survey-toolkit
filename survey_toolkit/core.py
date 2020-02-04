@@ -80,8 +80,9 @@ class Question:
     @answers.setter
     def answers(self, value: list):
         self._answers = []  # pylint: disable=attribute-defined-outside-init
-        for item in value:
-            self._add_answer(item)
+        if value:
+            for item in value:
+                self._add_answer(item)
 
     def add_answer(self, value):
         self._add_answer(value)
@@ -161,8 +162,9 @@ class TextInputQuestion(Question):
 class ChoiceQuestion(Question):
 
     def __init__(self, name, label=None, answers=None, choices=None):
-        super(ChoiceQuestion, self).__init__(name, label=label, answers=answers)
+        super(ChoiceQuestion, self).__init__(name, label=label)
         self.choices = choices
+        self.answers = answers
 
     @property
     def choices(self):

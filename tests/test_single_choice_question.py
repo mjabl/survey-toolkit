@@ -9,6 +9,12 @@ def question():
     return SingleChoiceQuestion('favouritePhone', 'What is your favourite phone brand?')
 
 
+def test_constructor_when_no_choices_given():
+    question = SingleChoiceQuestion('id', answers=['a', 'b', None, 'c'])
+    assert question.name == 'id'
+    assert question.answers == ['a', 'b', None, 'c']
+
+
 def test_add_answer_when_no_choices_given(question):
     question.add_answer('Windows Phone')
     assert question.answers[-1] == 'Windows Phone'
