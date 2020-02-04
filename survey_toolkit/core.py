@@ -332,15 +332,6 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             answers = self.answers
         return super(MultipleChoiceQuestion, self)._to_series(answers, to_labels)
 
-    def _to_dummies(self, choices: list, prefix: str, prefix_sep: str):
-        choices = choices if choices else self.get_unique_answers()
-        series = self.to_series()
-        stacked_series = series.apply(pd.Series).stack(dropna=False)
-        dummy_df = pd.get_dummies(stacked_series, prefix=prefix, prefix_sep=prefix_sep)\
-            .sum(level=0)
-        cols = [prefix + prefix_sep + choice for choice in choices]
-        return dummy_df[cols]
-
     def _get_optimized_answers(self, optimization_map: dict):
         optimized_answers = []
         for answer_list in self.answers:
