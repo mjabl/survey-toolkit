@@ -279,18 +279,21 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             prefix = self.name
             prefix_sep = '_'
         choices = choices if choices else self.get_unique_answers()
+        target_cols = [prefix + prefix_sep + choice for choice in choices]
         series = self.to_series(to_labels)
         df = series.apply(pd.Series)
         try:
-            dummy_df = pd.get_dummies(df.stack(dropna=False), prefix=prefix, prefix_sep=prefix_sep)\
-                .sum(level=0)
+            dummy_df = pd.get_dummies(df.stack(), prefix=prefix, prefix_sep=prefix_sep).sum(level=0)
+            for col in target_cols:
+                if col not in dummy_df:
+                    dummy_df[col] = 0
+            dummy_df = pd.concat([pd.DataFrame(index=df.index), dummy_df], axis=1, sort=False)
         except IndexError:
             dummy_df = df
-        cols = [prefix + prefix_sep + choice for choice in choices]
-        for col in cols:
-            if col not in dummy_df:
-                dummy_df[col] = 0
-        return dummy_df[cols]
+            for col in target_cols:
+                if col not in dummy_df:
+                    dummy_df[col] = None
+        return dummy_df[target_cols]
 
     def get_dummy_variables(self):
         if self.choices:

@@ -70,27 +70,26 @@ def test_to_dummies(question):
     question.answers = [['Samsung', 'iPhone'], None, ['Nokia'], ['Huawei', 'Xiaomi']]
     dummies = question.to_dummies()
     expected = pd.DataFrame({
-        'favouritePhones_Huawei': [0, 0, 0, 1],
-        'favouritePhones_iPhone': [1, 0, 0, 0],
-        'favouritePhones_Nokia': [0, 0, 1, 0],
-        'favouritePhones_Samsung': [1, 0, 0, 0],
-        'favouritePhones_Xiaomi': [0, 0, 0, 1],
+        'favouritePhones_Huawei': [0, None, 0, 1],
+        'favouritePhones_iPhone': [1, None, 0, 0],
+        'favouritePhones_Nokia': [0, None, 1, 0],
+        'favouritePhones_Samsung': [1, None, 0, 0],
+        'favouritePhones_Xiaomi': [0, None, 0, 1],
     })
-    assert all(dummies == expected)
-
+    assert (dummies.dropna() == expected.dropna()).values.all()
 
 def test_to_dummies_with_unused_choices(question):
     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
     question.answers = [['Samsung', 'iPhone'], None, None, ['Huawei', 'Xiaomi']]
     dummies = question.to_dummies()
     expected = pd.DataFrame({
-        'favouritePhones_Huawei': [0, 0, 0, 1],
-        'favouritePhones_iPhone': [1, 0, 0, 0],
-        'favouritePhones_Nokia': [0, 0, 0, 0],
-        'favouritePhones_Samsung': [1, 0, 0, 0],
-        'favouritePhones_Xiaomi': [0, 0, 0, 1],
+        'favouritePhones_Huawei': [0, None, None, 1],
+        'favouritePhones_iPhone': [1, None, None, 0],
+        'favouritePhones_Nokia': [0, None, None, 0],
+        'favouritePhones_Samsung': [1, None, None, 0],
+        'favouritePhones_Xiaomi': [0, None, None, 1],
     })
-    assert all(dummies == expected)
+    assert (dummies.dropna() == expected.dropna()).values.all()
 
 
 def test_to_dummies_with_empty_data(question):
@@ -98,39 +97,40 @@ def test_to_dummies_with_empty_data(question):
     question.answers = [None, None]
     dummies = question.to_dummies()
     expected = pd.DataFrame({
-        'favouritePhones_Huawei': [0, 0],
-        'favouritePhones_iPhone': [0, 0],
-        'favouritePhones_Nokia': [0, 0],
-        'favouritePhones_Samsung': [0, 0],
-        'favouritePhones_Xiaomi': [0, 0],
+        'favouritePhones_Huawei': [None, None],
+        'favouritePhones_iPhone': [None, None],
+        'favouritePhones_Nokia': [None, None],
+        'favouritePhones_Samsung': [None, None],
+        'favouritePhones_Xiaomi': [None, None],
     })
-    assert all(dummies == expected)
+    assert (dummies.dropna() == expected.dropna()).values.all()
 
 
 def test_to_dummies_with_conversion_to_labels(question):
     question.choices = {1: 'Huawei', 2: 'iPhone', 3: 'Nokia', 4: 'Samsung', 5: 'Xiaomi'}
     question.answers = [[4, 2], None, [3], [1, 5]]
+    dummies = question.to_dummies(to_labels=True)
     expected = pd.DataFrame({
-        'What are your favourite phone brands?: Huawei': [0, 0, 0, 1],
-        'What are your favourite phone brands?: iPhone': [1, 0, 0, 0],
-        'What are your favourite phone brands?: Nokia': [0, 0, 1, 0],
-        'What are your favourite phone brands?: Samsung': [1, 0, 0, 0],
-        'What are your favourite phone brands?: Xiaomi': [0, 0, 0, 1],
+        'What are your favourite phone brands?: Huawei': [0, None, 0, 1],
+        'What are your favourite phone brands?: iPhone': [1, None, 0, 0],
+        'What are your favourite phone brands?: Nokia': [0, None, 1, 0],
+        'What are your favourite phone brands?: Samsung': [1, None, 0, 0],
+        'What are your favourite phone brands?: Xiaomi': [0, None, 0, 1],
     })
-    assert all(question.to_dummies(to_labels=True) == expected)
+    assert (dummies.dropna() == expected.dropna()).values.all()
 
 
 def test_to_dummies_when_no_choices_given(question):
     question.answers = [['Samsung', 'iPhone'], None, ['Nokia'], ['Huawei', 'Xiaomi']]
     dummies = question.to_dummies()
     expected = pd.DataFrame({
-        'favouritePhones_Huawei': [0, 0, 0, 1],
-        'favouritePhones_Nokia': [0, 0, 1, 0],
-        'favouritePhones_Samsung': [1, 0, 0, 0],
-        'favouritePhones_Xiaomi': [0, 0, 0, 1],
-        'favouritePhones_iPhone': [1, 0, 0, 0],
+        'favouritePhones_Huawei': [0, None, 0, 1],
+        'favouritePhones_Nokia': [0, None, 1, 0],
+        'favouritePhones_Samsung': [1, None, 0, 0],
+        'favouritePhones_Xiaomi': [0, None, 0, 1],
+        'favouritePhones_iPhone': [1, None, 0, 0],
     })
-    assert all(dummies == expected)
+    assert (dummies.dropna() == expected.dropna()).values.all()
 
 
 def test_get_dummy_variables(question):
