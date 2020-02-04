@@ -280,9 +280,12 @@ class MultipleChoiceQuestion(ChoiceQuestion):
             prefix_sep = '_'
         choices = choices if choices else self.get_unique_answers()
         series = self.to_series(to_labels)
-        stacked_series = series.apply(pd.Series).stack(dropna=False)
-        dummy_df = pd.get_dummies(stacked_series, prefix=prefix, prefix_sep=prefix_sep)\
-            .sum(level=0)
+        df = series.apply(pd.Series)
+        try:
+            dummy_df = pd.get_dummies(df.stack(dropna=False), prefix=prefix, prefix_sep=prefix_sep)\
+                .sum(level=0)
+        except IndexError:
+            dummy_df = df
         cols = [prefix + prefix_sep + choice for choice in choices]
         for col in cols:
             if col not in dummy_df:
