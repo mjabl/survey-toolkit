@@ -286,7 +286,6 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         cols = [prefix + prefix_sep + choice for choice in choices]
         return dummy_df[cols]
 
-
     def get_dummy_variables(self):
         if self.choices:
             return {self.name + '_' + choice: self.label + ': ' + self.choices[choice]
