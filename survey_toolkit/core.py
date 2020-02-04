@@ -50,7 +50,7 @@ class Survey:
         for question in self.questions:
             question.clean_html_labels()
 
-    def to_pandas(self, to_labels=False, to_dummies = False, optimize=False) -> pd.DataFrame:
+    def to_pandas(self, to_labels=False, to_dummies=False, optimize=False) -> pd.DataFrame:
         """Creates pandas DataFrame from survey data"""
         dfs = [question.to_frame(to_labels, to_dummies, optimize) for question in self.questions]
         return pd.concat(dfs, axis=1, sort=False)
@@ -101,7 +101,7 @@ class Question:
     def to_series(self, to_labels=False):
         return self._to_series(answers=self.answers, to_labels=to_labels)
 
-    def to_frame(self, to_labels=False, to_dummies = False, optimize=False):
+    def to_frame(self, to_labels=False, to_dummies=False, optimize=False):
         return self._to_frame(to_labels=to_labels, to_dummies=to_dummies, optimize=optimize)
 
     def _clean_labels(self, regex):
