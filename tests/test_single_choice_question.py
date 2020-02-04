@@ -42,7 +42,7 @@ def test_to_series(question):
     expected = pd.Series(answers, name='favouritePhone')
     assert all(series.dropna() == expected.dropna())
     assert series.name == expected.name
-    assert list(series.categories) == list(question.choices)
+    assert list(series.values.categories) == list(question.choices)
 
 
 def test_to_label_series(question):
@@ -55,7 +55,7 @@ def test_to_label_series(question):
     expected.name = 'What is your favourite phone brand?'
     assert all(series.dropna() == expected.dropna())
     assert series.name == expected.name
-    assert list(series.categories) == list(question.choices)
+    assert list(series.values.categories) == list(question.choices)
 
 
 def test_to_label_series_when_choices_given_as_dict(question):
@@ -68,7 +68,7 @@ def test_to_label_series_when_choices_given_as_dict(question):
     expected.name = 'What is your favourite phone brand?'
     assert all(series.dropna() == expected.dropna())
     assert series.name == expected.name
-    assert list(series.categories) == question.get_choice_labels()
+    assert list(series.values.categories) == question.get_choice_labels()
 
 
 def test_optimize_when_choices_given_as_list(question):

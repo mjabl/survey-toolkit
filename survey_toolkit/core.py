@@ -3,7 +3,7 @@
 
 import json
 import re
-from collections import OrderedDict, Counter
+from collections import Counter
 import pandas as pd
 import many_stop_words
 
@@ -117,7 +117,7 @@ class Question:
         return pd.Series(answers, name=self.label if to_labels else self.name)
 
     def _to_frame(self, **kwargs):
-        return pd.DataFrame(self.to_series(to_labels=kwargs['to_labels']))
+        return self.to_series(to_labels=kwargs['to_labels']).to_frame()
 
     def _summary(self, **kwargs):  # pylint:disable=unused-argument
         name = self.label
@@ -260,9 +260,8 @@ class SingleChoiceQuestion(ChoiceQuestion):
         else:
             series_name = self.name
             categories = list(self.choices)
-        series = pd.Categorical(answers, categories=categories, ordered=True)
-        series.name = series_name
-        return series
+        categorical = pd.Categorical(answers, categories=categories, ordered=True)
+        return pd.Series(categorical, name=series_name)
 
 
 class MultipleChoiceQuestion(ChoiceQuestion):
