@@ -79,6 +79,20 @@ def test_to_dummies(question):
     assert all(dummies == expected)
 
 
+def test_to_dummies_with_unused_choices(question):
+    question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
+    question.answers = [['Samsung', 'iPhone'], None, None, ['Huawei', 'Xiaomi']]
+    dummies = question.to_dummies()
+    expected = pd.DataFrame({
+        'favouritePhones_Huawei': [0, 0, 0, 1],
+        'favouritePhones_iPhone': [1, 0, 0, 0],
+        'favouritePhones_Nokia': [0, 0, 0, 0],
+        'favouritePhones_Samsung': [1, 0, 0, 0],
+        'favouritePhones_Xiaomi': [0, 0, 0, 1],
+    })
+    assert all(dummies == expected)
+
+
 def test_to_dummies_with_conversion_to_labels(question):
     question.choices = {1: 'Huawei', 2: 'iPhone', 3: 'Nokia', 4: 'Samsung', 5: 'Xiaomi'}
     question.answers = [[4, 2], None, [3], [1, 5]]

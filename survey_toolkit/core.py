@@ -284,6 +284,9 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         dummy_df = pd.get_dummies(stacked_series, prefix=prefix, prefix_sep=prefix_sep)\
             .sum(level=0)
         cols = [prefix + prefix_sep + choice for choice in choices]
+        for col in cols:
+            if col not in dummy_df:
+                dummy_df[col] = 0
         return dummy_df[cols]
 
     def get_dummy_variables(self):
