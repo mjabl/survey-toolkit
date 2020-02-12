@@ -90,3 +90,11 @@ def test_optimize_when_no_choices_given(question):
     question.optimize()
     assert question.choices == {1: 'Huawei', 2: 'Nokia', 3: 'Samsung', 4: 'Xiaomi', 5: 'iPhone'}
     assert question.answers == [3, 5, 2, 5, None, 1, 4]
+
+
+def test_to_frame_with_optimization(question):
+    question.answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+    frame = question.to_frame(optimize=True)
+    expected = pd.DataFrame({'favouritePhone': [3, 5, 2, 5, None, 1, 4]})
+    assert all(frame.dropna() == expected.dropna())
+    assert question.answers == ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']

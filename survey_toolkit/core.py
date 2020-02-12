@@ -2,6 +2,7 @@
 # pylint: disable=missing-docstring
 
 import json
+from copy import copy
 import re
 from collections import Counter
 import pandas as pd
@@ -19,6 +20,13 @@ class Question:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({repr(self.__dict__)})"
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
 
     @property
     def label(self):
@@ -138,8 +146,7 @@ class ChoiceQuestion(Question):
             return self.choices
 
     def optimize(self):
-        """Converts answers and choice keys to numeric values. Useful for exporting data to SPSS/SAS
-        """
+        """Converts answers and choice keys to numeric values"""
         if self.data_type == int:
             return
         opt_map = self._get_optimization_map()
@@ -186,8 +193,11 @@ class ChoiceQuestion(Question):
 
     def _to_frame(self, **kwargs):
         if kwargs['optimize']:
-            self.optimize()
-        return super(ChoiceQuestion, self)._to_frame(**kwargs)
+            question = copy(self)
+            question.optimize()
+        else:
+            question = self
+        return super(ChoiceQuestion, question)._to_frame(**kwargs)
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
