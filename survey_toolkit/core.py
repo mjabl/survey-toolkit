@@ -8,54 +8,6 @@ import pandas as pd
 import many_stop_words
 
 
-class Survey:
-
-    def __init__(self, questions):
-        question_names = [question.name for question in questions]
-        duplicated_names = [name for name, count in Counter(question_names).items() if count > 1]
-        if duplicated_names:
-            raise ValueError(f"Question names must be unique. Duplicate names: {duplicated_names}")
-        self.questions = questions
-
-    @classmethod
-    def from_surveyjs(cls, survey_json: dict, results: list = None,
-                      default_other_text='other, which?', default_none_text='none'):
-        """Builds Survey object from surveyjs' survey json and, optionally, a result set"""
-        from .io.surveyjs import MetadataParser, process_result
-        metadata_parser = MetadataParser(default_other_text=default_other_text,
-                                         default_none_text=default_none_text)
-        survey = cls(questions=metadata_parser.parse(survey_json))
-        if results:
-            results = [process_result(json.loads(row)) for row in results]
-            survey.add_results(*results)
-        return survey
-
-    def add_result(self, **result):
-        for question in self.questions:
-            question.add_answer(result.get(question.name, None))
-
-    def add_results(self, *results):
-        for result in results:
-            self.add_result(**result)
-
-    def summary(self, language='en', **kwargs):
-        return [question.summary(language=language, **kwargs)
-                for question in self.questions]
-
-    def clean_labels(self, regex):
-        for question in self.questions:
-            question.clean_labels(regex)
-
-    def clean_html_labels(self):
-        for question in self.questions:
-            question.clean_html_labels()
-
-    def to_pandas(self, to_labels=False, to_dummies=False, optimize=False) -> pd.DataFrame:
-        """Creates pandas DataFrame from survey data"""
-        dfs = [question.to_frame(to_labels, to_dummies, optimize) for question in self.questions]
-        return pd.concat(dfs, axis=1, sort=False)
-
-
 class Question:
 
     data_type = str
@@ -103,6 +55,9 @@ class Question:
     def to_series(self, to_labels=False):
         return self._to_series(answers=self.answers, to_labels=to_labels)
 
+    def get_metadata(self, to_dummies=False, optimize=False):
+        return self._get_metadata(to_dummies=to_dummies, optimize=optimize)
+
     def to_frame(self, to_labels=False, to_dummies=False, optimize=False):
         return self._to_frame(to_labels=to_labels, to_dummies=to_dummies, optimize=optimize)
 
@@ -124,6 +79,9 @@ class Question:
     def _summary(self, **kwargs):  # pylint:disable=unused-argument
         name = self.label
         return f"Name: {name}, summary unavailable"
+
+    def _get_metadata(self, **kwargs):  # pylint:disable=unused-argument
+        return {'name': self.name, 'label': self.label}
 
     @staticmethod
     def _get_unique_answers(answers):
@@ -281,15 +239,16 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         choices = choices if choices else self.get_unique_answers()
         target_cols = [prefix + prefix_sep + choice for choice in choices]
         series = self.to_series(to_labels)
-        df = series.apply(pd.Series)
+        frame = series.apply(pd.Series)
         try:
-            dummy_df = pd.get_dummies(df.stack(), prefix=prefix, prefix_sep=prefix_sep).sum(level=0)
+            dummy_df = pd.get_dummies(frame.stack(), prefix=prefix, prefix_sep=prefix_sep)\
+                .sum(level=0)
             for col in target_cols:
                 if col not in dummy_df:
                     dummy_df[col] = 0
-            dummy_df = pd.concat([pd.DataFrame(index=df.index), dummy_df], axis=1, sort=False)
+            dummy_df = pd.concat([pd.DataFrame(index=frame.index), dummy_df], axis=1, sort=False)
         except IndexError:
-            dummy_df = df
+            dummy_df = frame
             for col in target_cols:
                 if col not in dummy_df:
                     dummy_df[col] = None
@@ -353,3 +312,73 @@ class MultipleChoiceQuestion(ChoiceQuestion):
         if kwargs['to_dummies']:
             return self.to_dummies(kwargs['to_labels'])
         return super(MultipleChoiceQuestion, self)._to_frame(**kwargs)
+
+
+class Survey:
+
+    def __init__(self, questions: list):
+        self.questions = questions
+
+    @property
+    def questions(self):
+        return self._questions
+
+    @questions.setter
+    def questions(self, value: list):
+        question_names = [question.name for question in value]
+        duplicated_names = [name for name, count in Counter(question_names).items() if count > 1]
+        if duplicated_names:
+            raise ValueError(f"Question names must be unique. Duplicate names: {duplicated_names}")
+        self._questions = value  # pylint:disable=attribute-defined-outside-init
+
+    @classmethod
+    def from_surveyjs(cls, survey_json: dict, results: list = None,
+                      default_other_text='other, which?', default_none_text='none'):
+        """Builds Survey object from surveyjs' survey json and, optionally, a result set"""
+        from .io.surveyjs import MetadataParser, process_result
+        metadata_parser = MetadataParser(default_other_text=default_other_text,
+                                         default_none_text=default_none_text)
+        survey = cls(questions=metadata_parser.parse(survey_json))
+        if results:
+            results = [process_result(json.loads(row)) for row in results]
+            survey.add_results(*results)
+        return survey
+
+    def add_question(self, question: Question):
+        assert question.name not in [qst.name for qst in self.questions], (
+            f"Question {question.name} already exists in this survey")
+        self._questions.append(question)
+
+    def add_result(self, **result):
+        for question in self.questions:
+            question.add_answer(result.get(question.name, None))
+
+    def add_results(self, *results):
+        for result in results:
+            self.add_result(**result)
+
+    def summary(self, language='en', **kwargs):
+        return [question.summary(language=language, **kwargs)
+                for question in self.questions]
+
+    def clean_labels(self, regex):
+        for question in self.questions:
+            question.clean_labels(regex)
+
+    def clean_html_labels(self):
+        for question in self.questions:
+            question.clean_html_labels()
+
+    def to_pandas(self, to_labels=False, to_dummies=False, optimize=False) -> pd.DataFrame:
+        """Creates pandas DataFrame from survey data"""
+        dfs = [question.to_frame(to_labels, to_dummies, optimize) for question in self.questions]
+        return pd.concat(dfs, axis=1, sort=False)
+
+    def get_metadata(self, to_dummies=False, optimize=False):
+        metadata = {}
+        for question in self.questions:
+            assert question.name not in metadata, (
+                f"Metadada for question {question.name} already collected. "
+                "Possibly the question is duplicated")
+            metadata[question.name] = question.get_metadata(to_dummies, optimize)
+        return metadata

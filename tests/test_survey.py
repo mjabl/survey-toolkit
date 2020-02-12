@@ -20,6 +20,13 @@ def test_survey_raises_exception_when_duplicate_question_names():
         Survey([question, question])
 
 
+def test_survey_raises_exception_when_adding_existing_question():
+    question = Question('q1')
+    with pytest.raises(AssertionError):
+        survey = Survey([question])
+        survey.add_question(question)
+
+
 def test_from_surveyjs_parses_numeric_question(basic_surveyjs_json):
     survey_json = _get_surveyjs_json(
         basic_surveyjs_json,
