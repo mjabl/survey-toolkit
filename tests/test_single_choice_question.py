@@ -98,3 +98,22 @@ def test_to_frame_with_optimization(question):
     expected = pd.DataFrame({'favouritePhone': [3, 5, 2, 5, None, 1, 4]})
     assert all(frame.dropna() == expected.dropna())
     assert question.answers == ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+
+
+def test_get_metadata_with_optimization(question):
+    question.choices = ['Huawei', 'Nokia', 'Samsung', 'Xiaomi', 'iPhone']
+    metadata = question.get_metadata(optimize=True)
+    expected = {
+        'name': 'favouritePhone', 'label': 'What is your favourite phone brand?',
+        'choices': {1: 'Huawei', 2: 'Nokia', 3: 'Samsung', 4: 'Xiaomi', 5: 'iPhone'}
+    }
+    assert metadata == expected
+
+def test_get_metadata_with_optimization_when_no_choices_given(question):
+    question.answers = ['Samsung', 'Huawei', 'Nokia','Xiaomi', 'iPhone']
+    metadata = question.get_metadata(optimize=True)
+    expected = {
+        'name': 'favouritePhone', 'label': 'What is your favourite phone brand?',
+        'choices': {1: 'Huawei', 2: 'Nokia', 3: 'Samsung', 4: 'Xiaomi', 5: 'iPhone'}
+    }
+    assert metadata == expected

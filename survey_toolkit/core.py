@@ -27,7 +27,6 @@ class Question:
         result.__dict__.update(self.__dict__)
         return result
 
-
     @property
     def label(self):
         if self._label:
@@ -173,9 +172,10 @@ class ChoiceQuestion(Question):
         else:
             choices = value
         try:
-            self._choices = {}
+            optimized_choices = {}
             for choice in choices:
-                self._choices[int(choice)] = choices[choice]
+                optimized_choices[int(choice)] = choices[choice]
+                self._choices = optimized_choices
         except ValueError:
             self._choices = choices
 
@@ -198,6 +198,16 @@ class ChoiceQuestion(Question):
         else:
             question = self
         return super(ChoiceQuestion, question)._to_frame(**kwargs)
+
+    def _get_metadata(self, **kwargs):
+        metadata = super(ChoiceQuestion, self)._get_metadata(**kwargs)
+        if kwargs['optimize'] and self.data_type != int:
+            optimization_map = self._get_optimization_map()
+            choices = self._get_optimized_choices(optimization_map)
+        else:
+            choices = self.choices
+        metadata['choices'] = choices
+        return metadata
 
 
 class SingleChoiceQuestion(ChoiceQuestion):
