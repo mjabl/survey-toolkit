@@ -1,6 +1,7 @@
 # pylint:disable=missing-docstring,redefined-outer-name
 import pytest
 import pandas as pd
+from pandas.testing import assert_series_equal, assert_frame_equal
 from survey_toolkit.core import SingleChoiceQuestion
 
 
@@ -42,13 +43,13 @@ def test_add_answer_when_choices_given_as_dict(question):
 
 def test_to_series(question):
     answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
-    question.choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
+    choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
+    question.choices = choices
     question.answers = answers
     series = question.to_series()
-    expected = pd.Series(answers, name='favouritePhone')
-    assert all(series.dropna() == expected.dropna())
-    assert series.name == expected.name
-    assert list(series.values.categories) == list(question.choices)
+    expected = pd.Series(pd.Categorical(answers, categories=choices, ordered=True),
+                         name='favouritePhone')
+    assert_series_equal(series, expected)
 
 
 def test_to_label_series(question):
@@ -57,11 +58,9 @@ def test_to_label_series(question):
     question.choices = choices
     question.answers = answers
     series = question.to_series(to_labels=True)
-    expected = pd.Categorical(answers, categories=choices, ordered=True)
-    expected.name = 'What is your favourite phone brand?'
-    assert all(series.dropna() == expected.dropna())
-    assert series.name == expected.name
-    assert list(series.values.categories) == list(question.choices)
+    expected = pd.Series(pd.Categorical(answers, categories=choices, ordered=True),
+                         name='What is your favourite phone brand?')
+    assert_series_equal(series, expected)
 
 
 def test_to_label_series_when_choices_given_as_dict(question):
@@ -69,13 +68,12 @@ def test_to_label_series_when_choices_given_as_dict(question):
     question.choices = choices
     question.answers = [2, 1, 5, 1, None, 3, 4]
     series = question.to_series(to_labels=True)
-    expected = pd.Categorical(['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi'],
-                               categories=list(choices.values()), ordered=True)
-    expected.name = 'What is your favourite phone brand?'
-    assert all(series.dropna() == expected.dropna())
-    assert series.name == expected.name
-    assert list(series.values.categories) == question.get_choice_labels()
-
+    expected = pd.Series(
+        pd.Categorical(['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi'],
+                       categories=list(choices.values()), ordered=True),
+        name='What is your favourite phone brand?'
+    )
+    assert_series_equal(series, expected)
 
 def test_optimize_when_choices_given_as_list(question):
     question.choices = ['iPhone', 'Samsung', 'Huawei', 'Xiaomi', 'Nokia']
@@ -95,9 +93,12 @@ def test_optimize_when_no_choices_given(question):
 def test_to_frame_with_optimization(question):
     question.answers = ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
     frame = question.to_frame(optimize=True)
-    expected = pd.DataFrame({'favouritePhone': [3, 5, 2, 5, None, 1, 4]})
-    assert all(frame.dropna() == expected.dropna())
+    expected = pd.DataFrame(pd.Series(
+        pd.Categorical([3, 5, 2, 5, None, 1, 4], [1, 2, 3, 4, 5], ordered=True),
+        name='favouritePhone'
+    ))
     assert question.answers == ['Samsung', 'iPhone', 'Nokia', 'iPhone', None, 'Huawei', 'Xiaomi']
+    assert_frame_equal(frame, expected)
 
 
 def test_get_metadata_with_optimization(question):
