@@ -1,6 +1,7 @@
 # pylint:disable=missing-docstring,redefined-outer-name
 import pytest
 import pandas as pd
+from pandas.testing import assert_series_equal, assert_frame_equal
 from survey_toolkit.core import MultipleChoiceQuestion
 
 
@@ -51,8 +52,7 @@ def test_to_series(question):
     question.answers = answers
     series = question.to_series()
     expected = pd.Series(answers, name='favouritePhones')
-    assert all(series.dropna() == expected.dropna())
-    assert series.name == expected.name
+    assert_series_equal(series, expected)
 
 
 def test_to_label_series(question):
@@ -61,8 +61,7 @@ def test_to_label_series(question):
     series = question.to_series(to_labels=True)
     expected = pd.Series([['Samsung', 'iPhone'], None, ['Nokia'], ['Huawei', 'Xiaomi']],
                          name='What are your favourite phone brands?')
-    assert all(series.dropna() == expected.dropna())
-    assert series.name == expected.name
+    assert_series_equal(series, expected)
 
 
 def test_to_dummies(question):
@@ -76,7 +75,8 @@ def test_to_dummies(question):
         'favouritePhones_Samsung': [1, None, 0, 0],
         'favouritePhones_Xiaomi': [0, None, 0, 1],
     })
-    assert (dummies.dropna() == expected.dropna()).values.all()
+    assert_frame_equal(dummies, expected)
+
 
 def test_to_dummies_with_unused_choices(question):
     question.choices = ['Huawei', 'iPhone', 'Nokia', 'Samsung', 'Xiaomi']
@@ -89,7 +89,7 @@ def test_to_dummies_with_unused_choices(question):
         'favouritePhones_Samsung': [1, None, None, 0],
         'favouritePhones_Xiaomi': [0, None, None, 1],
     })
-    assert (dummies.dropna() == expected.dropna()).values.all()
+    assert_frame_equal(dummies, expected)
 
 
 def test_to_dummies_with_empty_data(question):
@@ -103,7 +103,7 @@ def test_to_dummies_with_empty_data(question):
         'favouritePhones_Samsung': [None, None],
         'favouritePhones_Xiaomi': [None, None],
     })
-    assert (dummies.dropna() == expected.dropna()).values.all()
+    assert_frame_equal(dummies, expected)
 
 
 def test_to_dummies_with_conversion_to_labels(question):
@@ -117,7 +117,7 @@ def test_to_dummies_with_conversion_to_labels(question):
         'What are your favourite phone brands?: Samsung': [1, None, 0, 0],
         'What are your favourite phone brands?: Xiaomi': [0, None, 0, 1],
     })
-    assert (dummies.dropna() == expected.dropna()).values.all()
+    assert_frame_equal(dummies, expected)
 
 
 def test_to_dummies_when_no_choices_given(question):
@@ -130,7 +130,7 @@ def test_to_dummies_when_no_choices_given(question):
         'favouritePhones_Xiaomi': [0, None, 0, 1],
         'favouritePhones_iPhone': [1, None, 0, 0],
     })
-    assert (dummies.dropna() == expected.dropna()).values.all()
+    assert_frame_equal(dummies, expected)
 
 
 def test_get_dummy_variables(question):
