@@ -54,8 +54,6 @@ class MetadataParser:  # pylint: disable=too-few-public-methods
             self.label_stack.pop()
         elif metadata['type'] == 'html':
             pass
-        elif metadata['type'] in ['paneldynamic', 'matrixdynamic', 'html', 'sortablelist']:
-            pass
         else:
             self._handle_question(**metadata)
 
