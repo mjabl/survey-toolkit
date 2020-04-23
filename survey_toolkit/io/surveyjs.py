@@ -1,5 +1,6 @@
 """Parser for surveyjs' metadata json and result set"""
 # pylint: disable=cyclic-import
+# TODO: replace if/else's with polymorphic implementation
 
 from ..core import (Question, SingleChoiceQuestion, MultipleChoiceQuestion,
                     NumericInputQuestion, TextInputQuestion)
