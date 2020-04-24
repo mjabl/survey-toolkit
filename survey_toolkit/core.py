@@ -13,7 +13,7 @@ class Question:
 
     data_type = str
 
-    def __init__(self, name, label=None, answers=None):
+    def __init__(self, name, label=None, answers=None, **kwargs):
         self.name = name
         self._label = label
         self.answers = answers if answers else []
@@ -125,7 +125,7 @@ class TextInputQuestion(Question):
 
 class ChoiceQuestion(Question):
 
-    def __init__(self, name, label=None, answers=None, choices=None):
+    def __init__(self, name, label=None, answers=None, choices=None, **kwargs):
         super(ChoiceQuestion, self).__init__(name, label=label)
         self.choices = choices
         self.answers = answers

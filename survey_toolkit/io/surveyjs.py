@@ -1,7 +1,6 @@
 """Parser for surveyjs' metadata json and result set"""
-# pylint: disable=cyclic-import
-# TODO: replace if/else's with polymorphic implementation
-
+# pylint: disable=cyclic-import,too-few-public-methods
+from typing import List
 from ..core import (Question, SingleChoiceQuestion, MultipleChoiceQuestion,
                     NumericInputQuestion, TextInputQuestion)
 
@@ -45,7 +44,7 @@ class MetadataParser:  # pylint: disable=too-few-public-methods
             self.name_stack.append(metadata['name'])
             self.label_stack.append(metadata.get('title', ''))
             metadata['choices'] = metadata['columns']
-            metadata['rows'] = self._parse_value_text_list(metadata['rows'])
+            metadata['rows'] = _parse_value_text_list(metadata['rows'])
             metadata['type'] = 'radiogroup'
             for row in metadata['rows']:
                 metadata['name'] = row
@@ -58,93 +57,91 @@ class MetadataParser:  # pylint: disable=too-few-public-methods
         else:
             self._handle_question(**metadata)
 
-    def _handle_question(self, **kwargs):
-        """Question factory"""
-        _type = kwargs['type']
-        if _type == 'radiogroup':
-            self._handle_radiogroup(**kwargs)
-        elif _type == 'checkbox':
-            self._handle_checkbox(**kwargs)
-        elif _type == 'text':
-            validators = kwargs.get('validators', [])
-            if (kwargs.get('inputType') == 'number') or\
-                    (any(validator.get('type') == 'numeric' for validator in validators)):
-                self._handle_numeric(**kwargs)
-            else:
-                self._handle_text(**kwargs)
-        elif _type in ['paneldynamic', 'matrixdynamic', 'sortablelist']:
-            self._handle_other(**kwargs)
-        else:
-            raise NotImplementedError(f"Cannot handle {_type}")
-
-    def _handle_text(self, **kwargs):
+    def _handle_question(self, **metadata) -> None:
         if self.name_stack:
-            kwargs['name'] = '_'.join(self.name_stack) + '_' + kwargs['name']
-        if self.label_stack:  # FIXME: this is repeated so many times...
-            kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
-        self.question_list.append(TextInputQuestion(kwargs['name'], label=kwargs['title']))
-
-    def _handle_numeric(self, **kwargs):
-        if self.name_stack:
-            kwargs['name'] = '_'.join(self.name_stack) + '_' + kwargs['name']
+            metadata['name'] = '_'.join(self.name_stack) + '_' + metadata['name']
         if self.label_stack:
-            kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
-        self.question_list.append(NumericInputQuestion(kwargs['name'], label=kwargs['title']))
+            metadata['title'] = ': '.join(self.label_stack) + ': ' + metadata.get('title', '')
+        metadata['defaultOtherText'] = self.default_other_text
+        metadata['defaultNoneText'] = self.default_none_text
+        question_parser = get_question_parser(**metadata)
+        self.question_list.extend(question_parser.parse())
 
-    def _handle_radiogroup(self, **kwargs):
-        if self.name_stack:
-            kwargs['name'] = '_'.join(self.name_stack) + '_' + kwargs['name']
-        if self.label_stack:
-            kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
-        choices = self._parse_value_text_list(kwargs['choices'])
+
+class QuestionParser:
+    """Surveyjs question parser"""
+    question_class = Question
+
+    def __init__(self, **kwargs):
+        self.name = kwargs['name']
+        self.label = kwargs.get('title')
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({repr(self.__dict__)})"
+
+    def parse(self) -> List[Question]:
+        """Parses surveyjs question and returns relevant Question object(s)"""
+        return self._parse()
+
+    def _parse(self):
+        return [self.question_class(**self.__dict__)]
+
+
+class TextQuestionParser(QuestionParser):
+    """Surveyjs text question parser"""
+    question_class = TextInputQuestion
+
+
+class NumericQuuestionParser(QuestionParser):
+    """Surveyjs numeric question parser"""
+    question_class = NumericInputQuestion
+
+
+class RadiogroupQuestionParser(QuestionParser):
+    """Surveyjs radiougroup question parser"""
+    question_class = SingleChoiceQuestion
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.choices = _parse_value_text_list(kwargs['choices'])
         if kwargs.get('hasOther'):
-            other_text = kwargs.get('otherText', self.default_other_text)
-            choices['other'] = other_text
-            self.question_list.append(SingleChoiceQuestion(kwargs['name'], label=kwargs['title'],
-                                                           choices=choices))
-            self.question_list.append(TextInputQuestion(kwargs['name'] + '-Comment',
-                                                        kwargs['title'] + ' ' + other_text))
-        else:
-            self.question_list.append(SingleChoiceQuestion(kwargs['name'], label=kwargs['title'],
-                                                           choices=choices))
+            other_text = kwargs.get('otherText', kwargs.get('defaultOtherText', ''))
+            self.choices['other'] = other_text
 
-    def _handle_checkbox(self, **kwargs):
-        if self.name_stack:
-            kwargs['name'] = '_'.join(self.name_stack) + '_' + kwargs['name']
-        if self.label_stack:  # FIXME: solve repeating blocks with decorator or defined procedures
-            kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
-        choices = self._parse_value_text_list(kwargs['choices'])
+    def _parse(self) -> List[Question]:
+        if self.choices.get('other'):
+            comment_question = TextInputQuestion(name=self.name + '-Comment',
+                                                 label=self.label + ' ' + self.choices['other'])
+            return super()._parse() + [comment_question]
+        return super()._parse()
+
+
+class CheckboxQuestionParser(RadiogroupQuestionParser):
+    """Surveyjs checkbox question parser"""
+    question_class = MultipleChoiceQuestion
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         if kwargs.get('hasNone'):
-            choices['none'] = kwargs.get('noneText', self.default_none_text)
-        if kwargs.get('hasOther'):
-            other_text = kwargs.get('otherText', self.default_other_text)
-            choices['other'] = other_text
-            self.question_list.append(MultipleChoiceQuestion(kwargs['name'], label=kwargs['title'],
-                                                             choices=choices))
-            self.question_list.append(TextInputQuestion(kwargs['name'] + '-Comment',
-                                                        kwargs['title'] + ' ' + other_text))
-        else:
-            self.question_list.append(MultipleChoiceQuestion(kwargs['name'], label=kwargs['title'],
-                                                             choices=choices))
+            self.choices['none'] = kwargs.get('noneText', kwargs.get('defaultNoneText', ''))
 
-    def _handle_other(self, **kwargs):
-        if self.name_stack:
-            kwargs['name'] = '_'.join(self.name_stack) + '_' + kwargs['name']
-        if self.label_stack:
-            kwargs['title'] = ': '.join(self.label_stack) + ': ' + kwargs.get('title', '')
-        self.question_list.append(Question(kwargs['name'], label=kwargs['title']))
 
-    @staticmethod
-    def _parse_value_text_list(choices):
-        parsed_choices = {}
-        for choice in choices:
-            if isinstance(choice, dict):
-                parsed_choices[choice['value']] = choice["text"]
-            elif isinstance(choice, str):
-                parsed_choices[choice] = choice
-            else:
-                raise ValueError
-        return parsed_choices
+def get_question_parser(**kwargs) -> QuestionParser:
+    """Question parser factory"""
+    _type = kwargs['type']
+    if _type == 'radiogroup':
+        return RadiogroupQuestionParser(**kwargs)
+    if _type == 'checkbox':
+        return CheckboxQuestionParser(**kwargs)
+    if _type == 'text':
+        validators = kwargs.get('validators', [])
+        if (kwargs.get('inputType') == 'number') or\
+                (any(validator.get('type') == 'numeric' for validator in validators)):
+            return NumericQuuestionParser(**kwargs)
+        return TextQuestionParser(**kwargs)
+    if _type in ['paneldynamic', 'matrixdynamic', 'sortablelist']:
+        return QuestionParser(**kwargs)
+    raise NotImplementedError(f"Cannot get parser for {_type}")
 
 
 def process_result(result: dict):
@@ -157,3 +154,15 @@ def process_result(result: dict):
         else:
             target[variable] = result[variable]
     return target
+
+
+def _parse_value_text_list(choices: list) -> dict:
+    parsed_choices = {}
+    for choice in choices:
+        if isinstance(choice, dict):
+            parsed_choices[choice['value']] = choice["text"]
+        elif isinstance(choice, str):
+            parsed_choices[choice] = choice
+        else:
+            raise ValueError
+    return parsed_choices
